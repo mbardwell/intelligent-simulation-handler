@@ -7,7 +7,7 @@
 
 ### How do I get set up? ###
 
-* Setup Python 3.5 environment and install dependencies: [pypsa](https://pypsa.org/), tensorflow
+* Install dependencies using pip install -r requirements.txt
 
 ### Contribution guidelines ###
 
