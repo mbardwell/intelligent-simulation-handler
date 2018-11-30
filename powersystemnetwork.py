@@ -11,10 +11,10 @@ import json
 class Network():
     """Builds network for power system load flow simulation."""
 
-    def __init__(self, json_config):
+    def __init__(self, json_config, include_profiles=True):
         self.config = self.getConfig(json_config)
         self.participants = {}
-        if self.config is not None:
+        if self.config is not None and include_profiles:
             self.addParticipants()
 
     def getConfig(self, json_config):
