@@ -5,6 +5,7 @@ University of Alberta, 2018
 
 import os
 from powersystemnetwork import Network
+from powerflowsim import PowerFlowSim
 
 class IntelligentSimulationHandler():
     """Decides on whether to use look-up table or run a new power system
@@ -16,10 +17,11 @@ class IntelligentSimulationHandler():
            of comparison for all of the methods in this class
         """
         
+        self.json_config = json_config
         self.network = Network(json_config, False)
         self.compatible_network = None
         self.config_files = self.gatherJsonFiles()
-        self.totalComparison()
+        self.comparisonTests()
 
     def gatherJsonFiles(self):
         """Searches data folder for json files"""
@@ -72,19 +74,21 @@ class IntelligentSimulationHandler():
         else:
             return True
             
-    def totalComparison(self):
+    def comparisonTests(self):
         """Compares json files in data folder to inputted json config file"""
 
         y = self.network.config
         for file in self.config_files.copy():
             x = Network(file, False).config
             shared_items = {k: x[k] for k in x if k in y and x[k] == y[k]}
-            if (self.compareConnections(x) and 
+            if (x['lookup_table'] and self.compareConnections(x) and 
                 self.compareGenLoadStorage(x['profiles'])):
                 self.compatible_network = file
                 print('Found a compatible look up table')
                 break
-            else:
-                print('No compatible look up table found. Running simulation')
+
+        if self.compatible_network is None:
+            print('No compatible look up table found. Running simulation')
+            PowerFlowSim(100, self.json_config).nrPfSim(True)
 
 ish = IntelligentSimulationHandler('./data/3node.json')
