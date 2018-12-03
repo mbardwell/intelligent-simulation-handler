@@ -76,7 +76,7 @@ class PowerFlowSim():
 
     def setupLines(self, topology='web', x_lines=0.1, r_lines=0.1):
         """Adds power lines to network"""
-
+                    
         def _addLine(bus, other_bus, x_line=x_lines, r_line=r_lines):
             self.pypsa_network.add("Line",
                                    "{}-{}".format(bus, other_bus),
@@ -85,35 +85,14 @@ class PowerFlowSim():
                                    x=x_line,
                                    r=r_line)
 
-        nodes = self.network_param.participants # shorthanding
-        if topology == 'web':
-            usedbuslist = []
-            for bus in nodes:
-                for other_bus in nodes:
-                    if ((other_bus != bus) and not (np.any(
-                            [other_bus == x for x in usedbuslist]))):
-                        _addLine(bus, other_bus)
-                    usedbuslist.append(bus)
-        elif topology == 'ring':
-            first_bus = None
-            last_bus = None
-            for bus in nodes:
-                if last_bus is None:
-                    first_bus = bus
-                    last_bus = bus
-                    continue
-                else:
-                    _addLine(bus, last_bus)
-                    last_bus = bus
-                _addLine(last_bus, first_bus)
-
-        elif topology == 'radial':
-            j = 1
-            for i in range(round(len(nodes)/3)):
-                for _ in range(3):
-                    if j != len(nodes):
-                        _addLine(nodes.keys()[i], nodes.keys()[j])
-                        j += 1
+        connection_matrix = self.network_param.config['connections']
+        node_names = list(self.network_param.participants.keys()) # shorthanding
+        print(node_names)
+        for i in range(len(connection_matrix)):
+            for j in range(i+1, len(connection_matrix)):
+                if connection_matrix[i][j] == 1:
+                    _addLine(node_names[i], node_names[j])
+                    print(node_names[i], node_names[j])
 
     def lengthCap(self):
         """Trims length of load and gen profiles to min common length."""
