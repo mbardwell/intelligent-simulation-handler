@@ -12,7 +12,12 @@ class IntelligentSimulationHandler():
     """
 
     def __init__(self, json_config):
+        """Self.network is the network to be simulated and is the point
+           of comparison for all of the methods in this class
+        """
+        
         self.network = Network(json_config, False)
+        self.compatible_network = None
         self.config_files = self.gatherJsonFiles()
         self.totalComparison()
 
@@ -47,13 +52,37 @@ class IntelligentSimulationHandler():
             return False
         else:
             return True
-
+    
+    def compareGenLoadStorage(self, x, threshold=0.95):
+        """Compares power system network loads. Assumes topologies from 
+           different json_config files are ordered in the same way.
+        """
+        
+        y = self.network.config['profiles']
+        x_len = len(x)
+        y_len = len(y)
+        smaller_len = x_len if x_len < y_len else y_len
+        bigger_len = y_len if smaller_len == x_len else x_len
+        no_similarities = 0
+        for i in range(smaller_len):
+            if x[i] == y[i]:
+                no_similarities += 1
+        if (no_similarities/bigger_len) < threshold:
+            return False
+        else:
+            return True
+            
     def totalComparison(self):
         """Compares json files in data folder to inputted json config file"""
 
+        y = self.network.config
         for file in self.config_files.copy():
             x = Network(file, False).config
-            y = self.network.config
             shared_items = {k: x[k] for k in x if k in y and x[k] == y[k]}
+            if (self.compareConnections(x) and 
+                self.compareGenLoadStorage(x['profiles'])):
+                self.compatible_network = file
+                print('Found a compatible look up table')
+                break             
 
 ish = IntelligentSimulationHandler('./data/3node.json')
