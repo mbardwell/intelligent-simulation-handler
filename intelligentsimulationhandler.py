@@ -83,6 +83,8 @@ class IntelligentSimulationHandler():
                 self.compareGenLoadStorage(x['profiles'])):
                 self.compatible_network = file
                 print('Found a compatible look up table')
-                break             
+                break
+            else:
+                print('No compatible look up table found. Running simulation')
 
 ish = IntelligentSimulationHandler('./data/3node.json')
