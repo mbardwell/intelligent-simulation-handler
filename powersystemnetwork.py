@@ -95,16 +95,16 @@ class Participant():
             return None
 
     def updateProfiles(self):
-        """Update profiles attribute with current gen/load profiles"""
+        """Update profiles attribute with current gen/load profiles."""
 
         self.profiles = {'gen': self.gen, 'load': self.load}
 
     def addToGeneration(self):
-        """Adds generation to current generation profile"""
+        """TODO: Adds generation to current generation profile."""
 
         print(1)
 
     def addToLoad(self):
-        """Adds load to current load profile"""
+        """TODO: Adds load to current load profile."""
 
         print(2)
