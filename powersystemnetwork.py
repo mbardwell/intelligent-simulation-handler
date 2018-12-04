@@ -29,8 +29,8 @@ class Network():
             print('Exception: ', ex)
             return None
         
-    def saveConfig(self):
-        self.config['lookup_table'] = True
+    def saveConfig(self, model_name):
+        self.config['lookup_table'] = model_name
         with open(self.json_config, 'w') as config_file:
             json.dump(self.config, config_file, indent = 2)
 
