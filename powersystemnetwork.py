@@ -12,6 +12,7 @@ class Network():
     """Builds network for power system load flow simulation."""
 
     def __init__(self, json_config, include_profiles=True):
+        self.json_config = json_config
         self.config = self.getConfig(json_config)
         self.participants = {}
         if self.config is not None and include_profiles:
@@ -21,12 +22,17 @@ class Network():
         """Imports JSON-based configuration file."""
 
         try:
-            with open(json_config) as data_file:
+            with open(json_config, 'r') as data_file:
                 config = json.load(data_file)
             return config
         except IOError as ex:
             print('Exception: ', ex)
             return None
+        
+    def saveConfig(self):
+        self.config['lookup_table'] = True
+        with open(self.json_config, 'w') as config_file:
+            json.dump(self.config, config_file, indent = 2)
 
     def addParticipants(self):
         """Adds all time-based profiles to participant attribute."""
