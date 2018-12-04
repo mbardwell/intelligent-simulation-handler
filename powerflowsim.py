@@ -100,13 +100,11 @@ class PowerFlowSim():
                                    r=r_line)
 
         connection_matrix = self.network_param.config['connections']
-        node_names = list(self.network_param.participants.keys()) # shorthanding
-        print(node_names)
+        node_names = list(self.network_param.participants.keys()) # shorthand
         for i in range(len(connection_matrix)):
             for j in range(i+1, len(connection_matrix)):
                 if connection_matrix[i][j] == 1:
                     _addLine(node_names[i], node_names[j])
-                    print(node_names[i], node_names[j])
 
     def lengthCap(self):
         """Trims length of load and gen profiles to min common length."""
