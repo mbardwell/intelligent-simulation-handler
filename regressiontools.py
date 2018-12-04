@@ -7,15 +7,22 @@ Linear regression tools for Power Flow emulation
 import tensorflow as tf
 from tensorflow import keras
 from keras.models import Sequential
+from keras.models import model_from_json
 from keras.layers import Dense
 from keras.layers import Activation
 from keras.layers import Reshape
 from keras.layers import SimpleRNN
 import matplotlib.pyplot as plt
 import numpy as np
+import datetime
+import json
 
 class TrainANN(object):
-    def __init__(self, load_profile, voltage_profile, train_percentage = 0.7, name = 'ann_model'):
+    def __init__(self, load_profile=None, voltage_profile=None, 
+                 train_percentage=0.7, learning_rate=0.001, no_hidden_layers=1,
+                 layer_density=64, dropout=False, no_epochs=1000,
+                 early_stop=True, save_model=False,
+                 plot_results=False):
         """
         :type load_profile: List[int], voltage_profile: List[int]
         :type train_percentage: int, name: String
@@ -27,43 +34,62 @@ class TrainANN(object):
         self.test_data = load_profile[_split_index+1:]
         self.test_labels = voltage_profile[_split_index+1:]
         
-        self.name = name
+        if load_profile is None or voltage_profile is None:
+            self.loadModel()
+        else:
+            self.buildModel(learning_rate, no_hidden_layers, layer_density,
+                            dropout)
+            self.trainModel(no_epochs, early_stop)
+            self.evaluateModel()
+            self.predictWithModel()
+            if save_model:
+                self.model_name = 'ann_model_' + str(datetime.datetime.now()).\
+                               replace(':', '-').replace(' ', '_')
+                self.saveModel(self.model_name)
         
-    def buildModel(self):
+    def buildModel(self, learning_rate=0.001, no_hidden_layers=1, 
+                   layer_density=64, dropout=False):
         """
         :rtype self.model: class 'tensorflow.python.keras.engine.sequential.Sequential'
         """
         self.model = keras.Sequential()
-        self.model.add(keras.layers.Dense(64, 
-                                     activation=tf.nn.relu, 
-                                     input_shape=(self.train_data.shape[1],)))
-#        self.model.add(keras.layers.Dropout(0.2))
-#        self.model.add(keras.layers.Dense(64, activation=tf.nn.relu))
-#        self.model.add(keras.layers.Dropout(0.2))
+        self.model.add(keras.layers.Dense(
+                layer_density, 
+                activation=tf.nn.relu, 
+                input_shape=(self.train_data.shape[1],)))
+        for _ in range(1, no_hidden_layers):
+            print('here')
+            if dropout:
+                try:
+                    self.model.add(keras.layers.Dropout(dropout))
+                except:
+                    print('Drop not added to network. Must be a number\
+                          between 0-1')
+            self.model.add(keras.layers.Dense(layer_density,
+                                              activation=tf.nn.relu))
         self.model.add(keras.layers.Dense(self.train_labels.shape[1]))
     
-        optimizer = tf.train.RMSPropOptimizer(0.001)
+        optimizer = tf.train.RMSPropOptimizer(learning_rate)
     
         self.model.compile(loss='mse',
                            optimizer=optimizer,
                            metrics=['mae'])
 #        self.model.summary() # for debug
     
-    def trainModel(self, no_epochs = 1000):
-        """
-        :type model: class 'tensorflow.python.keras.engine.sequential.Sequential'
-        :type epochs: int
-        :rtype history: ??
-        """
+    def trainModel(self, no_epochs = 1000, early_stop=False, _patience=200):
+        """Trains ANN using Tensorflow backend"""
         
-        # The patience parameter is the amount of epochs to check for improvement.
-        early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
-                                                   patience=200)
-            
-        # Store training stats
-        self.history = self.model.fit(self.train_data, self.train_labels, epochs=no_epochs,
-                                      validation_split=0.2, verbose=0,
-                                      callbacks=[early_stop])
+        if early_stop is not False:
+            early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
+                                                       patience=_patience)
+            self.history = self.model.fit(self.train_data, self.train_labels,
+                                          epochs=no_epochs, 
+                                          validation_split=0.2, 
+                                          verbose=0, callbacks=[early_stop])
+        else:
+            self.history = self.model.fit(self.train_data, self.train_labels,
+                                          epochs=no_epochs, 
+                                          validation_split=0.2, verbose=0)
 
     def evaluateModel(self):
         [loss, mae] = self.model.evaluate(self.test_data, self.test_labels, verbose=0)
@@ -85,22 +111,21 @@ class TrainANN(object):
             
             # Histogram
             error = test_predictions - self.test_labels
-            
             for i in range(len(error[0])):
                 plt.hist(error.T[i], bins = 50)
             plt.xlabel("Prediction Error")
             plt.ylabel("Count")
             plt.show()
             
-    def saveModel(self, name = 'annmodel'):
+    def saveModel(self, name='annmodel'):
         ## TO DO: Test this function
         # serialize model to JSON
         model_json = self.model.to_json()
-        with open('../testing/' + name + ".json", "w") as json_file:
-            json_file.write(model_json)
+        with open('./data/lookup_tables/' + name + ".json", "w") as file:
+            json.dump(model_json, file)
             
         # serialize weights to HDF5
-        self.model.save_weights('../testing/' + name + ".h5")
+        self.model.save_weights('./data/lookup_tables/' + name + ".h5")
         print("Saved model to disk")
 
     def plotHistory(self):
@@ -114,6 +139,10 @@ class TrainANN(object):
         plt.legend()
         plt.ylim([0,0.2])
         plt.show()
+        
+    def loadModel(self):
+        print('load model')
+        
         
 class TrainRNN(object):
     def __init__(self, load_profile, voltage_profile, train_percentage = 0.7, name = 'ann_model'):
