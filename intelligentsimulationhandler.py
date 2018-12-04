@@ -4,10 +4,11 @@ University of Alberta, 2018
 """
 
 import os
-import json
+import sys
 from powersystemnetwork import Network
 from powerflowsim import PowerFlowSim
 from regressiontools import TrainANN, NormalEquation
+from keras.models import model_from_json
 
 class IntelligentSimulationHandler():
     """Decides on whether to use look-up table or run a new power system
@@ -31,9 +32,23 @@ class IntelligentSimulationHandler():
         config_files = []
         for root, _, files in os.walk('./data/'):
             for file in files:
-                if file.endswith('.json') and not file.startswith('ann_model'):
+                if file.endswith('.json') and not file.startswith('ann'):
                     config_files.append(root + file)
         return config_files
+    
+    def loadLookupTable(self, model_name):
+        try:
+            with open(model_name + '.json', 'r') as ann_model_json:
+                model_json_string = ann_model_json.read().\
+                replace('\\', '')[1:-1]
+                model = model_from_json(model_json_string)
+            ann_model_json.close()
+            model.load_weights(model_name + '.h5', by_name=False)
+        except BaseException as ex:
+            print('Line {} - lookup table loading failed. {}'.format(
+                    sys.exc_info()[2].tb_lineno, ex))
+            return False
+        print('Opening compatible look up table')
 
     def compareConnections(self, x, threshold=0.95):
         """Compares power system network connections"""
@@ -79,22 +94,21 @@ class IntelligentSimulationHandler():
     def comparisonTests(self):
         """Compares json files in data folder to inputted json config file"""
 
-        y = self.network.config
         for file in self.config_files.copy():
             x = Network(file, False).config
-            shared_items = {k: x[k] for k in x if k in y and x[k] == y[k]}
-            if (x['lookup_table'] and self.compareConnections(x) and 
-                self.compareGenLoadStorage(x['profiles'])):
+            if (x['lookup_table'] is not False and self.compareConnections(x) 
+            and self.compareGenLoadStorage(x['profiles'])):
                 self.compatible_network = file
-                print('Found a compatible look up table')
-                break
+                if self.loadLookupTable('./data/lookup_tables/' 
+                                     + x['lookup_table']) == False:
+                    self.compatible_network = False
 
         if self.compatible_network is None:
             print('No compatible look up table found. Running simulation')
             pfs = PowerFlowSim(100, self.json_config)
             #TODO: Add in if len(x['profiles']) condition for ann vs ne
-            TrainANN(pfs.node_loads, pfs.node_voltages, save_model=True)
-            self.network.saveConfig()
+            ann = TrainANN(pfs.node_loads, pfs.node_voltages, save_model=True)
+            self.network.saveConfig(ann.model_name)
                     
             
 
