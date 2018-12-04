@@ -4,8 +4,10 @@ University of Alberta, 2018
 """
 
 import os
+import json
 from powersystemnetwork import Network
 from powerflowsim import PowerFlowSim
+from regressiontools import TrainANN, NormalEquation
 
 class IntelligentSimulationHandler():
     """Decides on whether to use look-up table or run a new power system
@@ -29,7 +31,7 @@ class IntelligentSimulationHandler():
         config_files = []
         for root, _, files in os.walk('./data/'):
             for file in files:
-                if file.endswith('.json'):
+                if file.endswith('.json') and not file.startswith('ann_model'):
                     config_files.append(root + file)
         return config_files
 
@@ -89,6 +91,11 @@ class IntelligentSimulationHandler():
 
         if self.compatible_network is None:
             print('No compatible look up table found. Running simulation')
-            PowerFlowSim(100, self.json_config).nrPfSim(True)
+            pfs = PowerFlowSim(100, self.json_config)
+            #TODO: Add in if len(x['profiles']) condition for ann vs ne
+            TrainANN(pfs.node_loads, pfs.node_voltages, save_model=True)
+            self.network.saveConfig()
+                    
+            
 
 ish = IntelligentSimulationHandler('./data/3node.json')
