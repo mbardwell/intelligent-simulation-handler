@@ -16,12 +16,11 @@ pypsa.pf.logger.setLevel(logging.ERROR) # Use ERROR or DEBUG
 class PowerFlowSim():
     """Builds PyPSA-based power system load flow simulation."""
 
-    def __init__(self, length, filename='./data/3node.json'):
+    def __init__(self, length, filename='./data/3node.json', showall=False):
         """
         type: length: int. Length of usable load profile
-        type: topology: String. System network topology (default 'web')
-        type: subpath: String. Path to JSON file holding network params
-        (default '../_configs/3node.json')
+        type: filename: String. Config file storing power system network data
+        type: showall: bool. Show plots after running simulation
         """
 
         self.length = length
@@ -29,6 +28,21 @@ class PowerFlowSim():
         self.sampleperiod = 60 # default for all files in use
         self.pypsa_network = pypsa.Network(sort=False) # initialise network
         self.pypsa_network.set_snapshots(range(self._adjustLengths(length)))
+        
+        self.setupBuses()
+        self.setupGenerators()
+        self.setupLoads()
+        self.setupLines()
+
+        self.pypsa_network.pf() # non-linear Newton Raphson power flow
+        self.toArrays(True, True)
+
+        if showall:
+            self.plotLoads()
+            self.plotGenerators()
+            self.plotNodeVoltages()
+            self.plotLineLoading()
+            self.boxPlots()
 
     def noAgents(self):
         """Determines number of network participants."""
@@ -220,45 +234,27 @@ class PowerFlowSim():
 
     def toArrays(self, load=False, voltage=False):
         """Create numpy arrays with load and voltage profiles"""
-
-        self.nodeloads = np.array([])
-        self.nodevoltages = np.array([])
+        
+        self.node_loads = np.array([])
+        self.node_voltages = np.array([])
         if load:
             for bus in self.pypsa_network.loads_t.p.keys():
-                self.nodeloads = np.append(self.nodeloads,
+                self.node_loads = np.append(self.node_loads,
                                            self.pypsa_network.loads_t.p[bus]
                                           )
-            self.nodeloads = self.nodeloads.reshape(
+            self.node_loads = self.node_loads.reshape(
                 len(self.pypsa_network.loads_t.p.keys()),
                 self.length).T
 
 
         if voltage:
             for bus in self.pypsa_network.buses_t['v_mag_pu'].keys():
-                self.nodevoltages = np.append(
-                    self.nodevoltages,
+                self.node_voltages = np.append(
+                    self.node_voltages,
                     self.pypsa_network.buses_t.v_mag_pu[bus]
                     )
-            self.nodevoltages = self.nodevoltages.reshape(
+            self.node_voltages = self.node_voltages.reshape(
                 len(self.pypsa_network.buses_t['v_mag_pu'].keys()),
                 self.length).T
 
-    def nrPfSim(self, showall=False):
-        """Base case for testing power flow class"""
-
-        self.setupBuses()
-        self.setupGenerators()
-        self.setupLoads()
-        self.setupLines()
-
-        self.pypsa_network.pf() # non-linear Newton Raphson power flow
-
-        if showall:
-            self.plotLoads()
-            self.plotGenerators()
-            self.plotNodeVoltages()
-            self.plotLineLoading()
-            self.boxPlots()
-
-        self.toArrays(True, True)
         
