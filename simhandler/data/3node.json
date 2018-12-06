@@ -1,0 +1,48 @@
+{
+  "connections": [
+    [
+      0,
+      1,
+      0
+    ],
+    [
+      1,
+      0,
+      1
+    ],
+    [
+      0,
+      1,
+      0
+    ]
+  ],
+  "lookup_table": "ne_model_2018-12-05_15-48-39.241878",
+  "profiles": [
+    {
+      "generation": true,
+      "logic_type": "binary",
+      "id": "18356",
+      "load": true,
+      "storage": false
+    },
+    {
+      "generation": false,
+      "logic_type": "binary",
+      "id": "18357",
+      "load": true,
+      "storage": false
+    },
+    {
+      "generation": false,
+      "logic_type": "binary",
+      "id": "18358",
+      "load": true,
+      "storage": false
+    }
+  ],
+  "study": {
+    "description": "binary2-m4y16-super-load"
+  },
+  "profile_path": "./",
+  "start_datetime": "2016-04-01 0:0:0"
+}
