@@ -12,18 +12,18 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command
 
 # Package meta-data.
-NAME = 'intelligent-simulation-handler'
-DESCRIPTION = 'Intelligent simulation handler for power system load flow\
-simulations'
+NAME = 'simhandler'
+DESCRIPTION = 'Intelligent simulation handler for power system load flow simulations'
 URL = 'https://github.com/mbardwell/intelligent-simulation-handler'
 EMAIL = 'bardwell@ualberta.ca'
 AUTHOR = 'Mike Bardwell'
 REQUIRES_PYTHON = '>=3.5.0'
-VERSION = '0.1'
+VERSION = '0.5'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    # 'requests', 'maya', 'records',
+    'numpy', 'matplotlib', 'h5py', 'tensorflow', 
+    'keras', 'pypsa',
 ]
 
 # What packages are optional?
@@ -103,7 +103,7 @@ setup(
     author_email=EMAIL,
     python_requires=REQUIRES_PYTHON,
     url=URL,
-    packages=find_packages(exclude=('tests',)),
+    packages=find_packages(exclude=('utils', 'docs')),
     # If your package is a single module, use this instead of 'packages':
     # py_modules=['mypackage'],
 
@@ -117,12 +117,12 @@ setup(
     classifiers=[
         # Trove classifiers
         # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
-        'License :: OSI Approved :: GPL-3.0 License',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5.5',
-        'Programming Language :: Python :: Implementation :: CPython',
-        'Programming Language :: Python :: Implementation :: PyPy'
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'Programming Language :: Python :: 3.5',
+        'Operating System :: Microsoft :: Windows',
+        'Topic :: Scientific/Engineering :: Artificial Intelligence',
+        'Intended Audience :: Science/Research',
+        'Natural Language :: English'
     ],
     # $ setup.py publish support.
     cmdclass={

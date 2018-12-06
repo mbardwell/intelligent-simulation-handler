@@ -1,3 +1,0 @@
-tensorflow==1.9.0
-keras==2.2.2
-pypsa==0.13.1
