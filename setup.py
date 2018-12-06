@@ -18,12 +18,11 @@ URL = 'https://github.com/mbardwell/intelligent-simulation-handler'
 EMAIL = 'bardwell@ualberta.ca'
 AUTHOR = 'Mike Bardwell'
 REQUIRES_PYTHON = '>=3.5.0'
-VERSION = '0.5'
+VERSION = '0.0.1'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    'numpy', 'matplotlib', 'h5py', 'tensorflow', 
-    'keras', 'pypsa',
+    'numpy', 'matplotlib', 'h5py', 'tensorflow', 'keras', 'pypsa',
 ]
 
 # What packages are optional?
