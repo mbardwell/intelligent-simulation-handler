@@ -3,10 +3,13 @@ Intelligent simulation handler (ISH) code by Mike Bardwell, MSc
 University of Alberta, 2018
 """
 
+import sys
+sys.path.append('../') # when running code locally, this includes simhandler
+                       # package.
 import os
-from powersystemnetwork import Network
-from powerflowsim import PowerFlowSim
-from regressiontools import TrainANN, NormalEquation
+from simhandler.powersystemnetwork import Network
+from simhandler.powerflowsim import PowerFlowSim
+from simhandler.regressiontools import TrainANN, NormalEquation
 
 class IntelligentSimulationHandler():
     """Decides on whether to use look-up table or run a new power system
@@ -94,13 +97,10 @@ class IntelligentSimulationHandler():
         if self.compatible_network is None:
             print('No compatible look up table found. Running simulation')
             pfs = PowerFlowSim(100, self.json_config)
-            #TODO: Add in if len(x['profiles']) condition for ann vs ne
-
+            
             if pfs.node_loads.shape[1] > 10000:
                 ann = TrainANN(pfs.node_loads, pfs.node_voltages, save_model=True)
                 self.network.saveConfig(ann.model_name)
             else:
                 neqn = NormalEquation(pfs.node_loads, pfs.node_voltages, True)
                 self.network.saveConfig(neqn.model_name)
-
-ish = IntelligentSimulationHandler('./data/3node.json')

@@ -4,11 +4,14 @@ The term node(s) is used interchangeably with participant(s)
 University of Alberta, 2018
 """
 
+import sys
+sys.path.append('../') # when running code locally, this includes simhandler
+                       # package.
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
 import pypsa
-import powersystemnetwork as psn
+import simhandler.powersystemnetwork as psn
 
 logging.basicConfig(level=logging.ERROR) # must be called before pypsa
 pypsa.pf.logger.setLevel(logging.ERROR) # Use ERROR or DEBUG
