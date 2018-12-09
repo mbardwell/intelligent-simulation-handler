@@ -66,7 +66,7 @@ class PowerFlowSim():
 
         nodes = self.network_param.participants # shorthanding
         for bus in nodes:
-            if nodes[bus].gen is None:
+            if nodes[bus].gen['profile'].size == 0:
                 continue
             else:
                 self.pypsa_network.add(
@@ -206,7 +206,7 @@ class PowerFlowSim():
         plt.ylabel('Power (p.u.)')
         plt.show()
 
-    def boxPlots(self):
+    def boxPlots(self, save=False):
         """Plots voltage magnitudes per node in box plot form"""
 
         data, toremove = [], []
@@ -230,7 +230,10 @@ class PowerFlowSim():
         plt.title('Bus Voltage Box Plots')
         plt.xlabel('Buses')
         plt.ylabel('Voltage (p.u.)')
-        plt.violinplot(data)
+        plt.violinplot(data)       
+        plt.tight_layout()
+        if save:
+            plt.savefig(fname='boxandviolinplot.pdf', format='pdf')
         plt.show()
 
     def toArrays(self, load=False, voltage=False):
@@ -256,6 +259,4 @@ class PowerFlowSim():
                     )
             self.node_voltages = self.node_voltages.reshape(
                 len(self.pypsa_network.buses_t['v_mag_pu'].keys()),
-                self.length).T
-
-        
+                self.length).T   
