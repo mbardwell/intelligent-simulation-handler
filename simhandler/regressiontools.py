@@ -395,7 +395,7 @@ class HyperparamSearch():
             plt.legend(['MSE', 'MAE'])
             plt.ylabel('MSE/MAE Magnitude')
             plt.xlabel('Learning Rate')
-            plt.title('ANN Accuracy Versus Learning Rate for ISH')
+            plt.title('ANN Validation Accuracy Versus Learning Rate for ISH')
             if savefig == i:
                 plt.savefig('./data/print/analyis_learningrate.pdf')
             plt.show()
