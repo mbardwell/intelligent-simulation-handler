@@ -36,15 +36,15 @@ class Network():
 
     def addParticipants(self):
         """Adds all time-based profiles to participant attribute."""
+        counter = 0
 
         for profile in self.config['profiles']:
             current_name = self.generateRandomName()
-            self.participants[current_name] = None
-            if profile['id'] in self.participants.keys():
-                print('Error: profile already exists for id: ', profile['id'])
-            else:
-                filename = profile['id'] + '.zp'
-                self.participants[current_name] = Participant(filename)
+            if current_name in self.participants.keys():
+                current_name = current_name + '_' + str(counter)
+                counter += 1
+            filename = profile['id'] + '.zp'
+            self.participants[current_name] = Participant(filename)
 
     def generateRandomName(self):
         """To be replaced by names from json_config file when updated"""
