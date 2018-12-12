@@ -8,6 +8,7 @@ Linear regression tools for Power Flow emulation
 import sys
 import datetime
 import json
+from time import time
 import tensorflow as tf
 from tensorflow import keras
 from keras.models import Sequential
@@ -41,7 +42,7 @@ class TrainANN(object):
                             dropout)
             self.trainModel(no_epochs, early_stop)
             self.evaluateModel()
-            self.predictWithModel()
+            self.predictWithModel(plot_results)
             if save_model:
                 self.model_name = 'ann_model_' + str(datetime.datetime.now()).\
                                replace(':', '-').replace(' ', '_')
@@ -50,7 +51,7 @@ class TrainANN(object):
     def buildModel(self, learning_rate=0.001, no_hidden_layers=1,
                    layer_density=64, dropout=False):
         """
-        :rtype self.model: class 'tensorflow.python.keras.engine.sequential.Sequential'
+        :rtype self.model: class 'keras.engine.sequential.Sequential'
         """
         self.model = keras.Sequential()
         self.model.add(keras.layers.Dense(
@@ -58,7 +59,6 @@ class TrainANN(object):
             activation=tf.nn.relu,
             input_shape=(self.train_data.shape[1],)))
         for _ in range(1, no_hidden_layers):
-            print('here')
             if dropout:
                 try:
                     self.model.add(keras.layers.Dropout(dropout))
@@ -94,9 +94,10 @@ class TrainANN(object):
     def evaluateModel(self):
         """Evalutes keras ann model against test data"""
 
-        [loss, mae] = self.model.evaluate(self.test_data, self.test_labels, verbose=0)
-        print("ANN regression loss: {}, mae: {}".format(loss, mae))
-        return mae
+        [loss, mae] = self.model.evaluate(self.test_data, self.test_labels, 
+        verbose=0)
+#        print("ANN regression loss: {}, mae: {}".format(loss, mae)) #debug
+        return loss, mae
 
     def predictWithModel(self, plot_results=True):
         """Makes predictions by applying learned ANN model on test data"""
@@ -126,10 +127,12 @@ class TrainANN(object):
         
         plt.figure()
         plt.xlabel('Epoch')
-        plt.ylabel('Mean Abs Error')
-        plt.plot(self.history.epoch, np.array(self.history.history['mean_absolute_error']),
+        plt.ylabel('Mean Absolute Error')
+        plt.plot(self.history.epoch, 
+                 np.array(self.history.history['mean_absolute_error']),
                  label='Train Loss')
-        plt.plot(self.history.epoch, np.array(self.history.history['val_mean_absolute_error']),
+        plt.plot(self.history.epoch, 
+                 np.array(self.history.history['val_mean_absolute_error']),
                  label='Val loss')
         plt.legend()
         plt.ylim([0, 0.2])
@@ -295,3 +298,107 @@ class TrainRNN(object):
         [loss, mae] = self.model.evaluate(self.test_data, self.test_labels, verbose=0)
         print("ANN regression loss: {}, mae: {}".format(loss, mae))
         return mae
+    
+
+class HyperparamSearch():
+    """Performs artificial neural network training using various parameters. 
+       Returns the mse/mae of each test
+    """
+    
+    def __init__(self, load_profile=None, voltage_profile=None, search_type='grid'):
+        """Search_type is 'grid' or 'random'..."""
+        
+        self.solution_matrix = []
+        
+        if load_profile is not None and voltage_profile is not None:
+            start = time()
+            tg = {} # tg is short for training grid
+            if search_type == 'grid':
+                tg['learning_rate'] = np.arange(0.001,0.1,0.02)
+                tg['no_hidden_layers'] = np.arange(1,2,1)
+                tg['layer_density'] = np.arange(50,60,10)
+                self.params = [len(tg['learning_rate']), 
+                                   len(tg['no_hidden_layers']),
+                                   len(tg['layer_density'])]
+                self.solution_matrix.append(self.params)
+                #TODO: tg['dropout'] = np.array([False, True])
+                #TODO: tg['early_stop'] = np.array([False, True])
+                for i in range(len(tg['learning_rate'])):
+                    for j in range(len(tg['no_hidden_layers'])):
+                        for k in range(len(tg['layer_density'])):
+                            ann = TrainANN(
+                                    load_profile, 
+                                    voltage_profile, 
+                                    learning_rate=tg['learning_rate'][i],
+                                    no_hidden_layers=tg['no_hidden_layers'][j],
+                                    layer_density=tg['layer_density'][k]
+                                    )
+                            self.solution_matrix.append(
+                                    [tg['learning_rate'][i],
+                                    tg['no_hidden_layers'][j],
+                                    tg['layer_density'][k],
+                                    ann.evaluateModel()[0],
+                                    ann.evaluateModel()[1]])
+                            print('alpha: {}, layers: {}, density: {}'.format(
+                                    tg['learning_rate'][i],
+                                    tg['no_hidden_layers'][j],
+                                    tg['layer_density'][k]))
+                print(self.solution_matrix) #debug
+                end = time()
+                self.runtime = int(end - start)
+                self.exportResults()
+    
+    def exportResults(self):
+        """Saves results to file"""
+        
+        counter = 0
+        with open('./data/hyperparamsearchresults_' + str(self.runtime) + 
+                  'seconds' + '.txt', 'w') as file:
+            for training_session in self.solution_matrix:
+                for listitem in training_session:
+                    file.write(str(listitem))
+                    if counter < len(training_session)-1:
+                        file.write(', ')
+                    counter += 1
+                file.write('\n')
+                counter = 0
+        file.close()
+        
+    def importResults(self, runtime):
+        """Imports hyperparameter search results file.
+           :type: runtime: String
+        """
+        
+        with open('./data/hyperparamsearchresults_' + runtime + 'seconds.txt', 
+                  'r') as file:
+            results = []
+            for line in file:
+                results.append([float(i) for i in line.replace('\n', '').
+                                split(', ')])
+            self.solution_matrix = results
+        
+    def learningRateAnalysis(self, savefig=None):
+        """Plots that demonstrate the effect of alpha as the independent var
+           :type: savefig: index of plot you want to save
+        """
+        
+        learning_rate = []
+        self.params = [int(x) for x in self.solution_matrix[0]]
+        self.solution_matrix.pop(0)
+        for i in range(self.params[1]*self.params[2]):
+            for j in range(i, len(self.solution_matrix), 
+                           self.params[1]*self.params[2]):
+                learning_rate.append(self.solution_matrix[j])
+            learning_rate = np.array(learning_rate).T
+            plt.plot(learning_rate[0], learning_rate[3], 'r-',
+                     learning_rate[0], learning_rate[4], 'b-')
+            plt.legend(['MSE', 'MAE'])
+            plt.ylabel('MSE/MAE Magnitude')
+            plt.xlabel('Learning Rate')
+            plt.title('ANN Accuracy Versus Learning Rate for ISH')
+            if savefig == i:
+                plt.savefig('./data/print/analyis_learningrate.pdf')
+            plt.show()
+            learning_rate = []
+        
+        
