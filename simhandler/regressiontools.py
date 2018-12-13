@@ -21,13 +21,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import h5py
 
-class TrainANN(object):
+class ANNRegression():
     """Trains feedforward ANN using power system load flow load/voltage data"""
 
     def __init__(self, load_profile=None, voltage_profile=None,
                  train_percentage=0.7, learning_rate=0.001, no_hidden_layers=1,
                  layer_density=64, dropout=False, no_epochs=1000,
-                 early_stop=True, save_model=False,
+                 early_stop=False, save_model=False,
                  plot_results=False):
 
         if load_profile is not None and voltage_profile is not None:
@@ -71,9 +71,10 @@ class TrainANN(object):
 
         optimizer = tf.train.RMSPropOptimizer(learning_rate)
 
+        # mse used instead of rmse because it one less step
         self.model.compile(loss='mse',
                            optimizer=optimizer,
-                           metrics=['mae'])
+                           metrics=['acc'])
 #        self.model.summary() # for debug
 
     def trainModel(self, no_epochs=1000, early_stop=False, _patience=200):
@@ -96,8 +97,9 @@ class TrainANN(object):
 
         [loss, mae] = self.model.evaluate(self.test_data, self.test_labels, 
         verbose=0)
-#        print("ANN regression loss: {}, mae: {}".format(loss, mae)) #debug
-        return loss, mae
+        rmse = np.sqrt(loss)
+#        print('ANN RMSE:', rmse) #debug
+        return rmse
 
     def predictWithModel(self, plot_results=True):
         """Makes predictions by applying learned ANN model on test data"""
@@ -121,21 +123,25 @@ class TrainANN(object):
             plt.xlabel("Prediction Error")
             plt.ylabel("Count")
             plt.show()
+            self.plotHistory()
 
-    def plotHistory(self):
+    def plotHistory(self, savefig=False):
         """Plot learning curve"""
         
         plt.figure()
         plt.xlabel('Epoch')
-        plt.ylabel('Mean Absolute Error')
+        plt.ylabel('Root Mean Square Error')
+        plt.title('ANN Training and Validation Loss Versus Epochs')
         plt.plot(self.history.epoch, 
-                 np.array(self.history.history['mean_absolute_error']),
-                 label='Train Loss')
+                 np.array(self.history.history['loss']),
+                 label='Training Loss')
         plt.plot(self.history.epoch, 
-                 np.array(self.history.history['val_mean_absolute_error']),
-                 label='Val loss')
+                 np.array(self.history.history['val_loss']),
+                 label='Validation loss')
         plt.legend()
         plt.ylim([0, 0.2])
+        if savefig:
+            plt.savefig('./data/print/analysis_trainandvalidationloss.pdf')
         plt.show()
 
     def saveModel(self, name='annmodel'):
@@ -169,21 +175,26 @@ class TrainANN(object):
             return False
 
 
-class NormalEquation(object):
-    """Trains parametric algorithm using power system load flow load/voltage
-       data
+class ParametricRegression():
+    """Trains linear parametric algorithm using power system load flow load/
+       voltage data
     """
 
     def __init__(self, load_profile=None, voltage_profile=None,
-                 save_model=False):
+                 train_percentage=0.7, save_model=False):
 
         if load_profile is not None and voltage_profile is not None:
-            self.lpf = {'data': load_profile, 'target': voltage_profile}
-            m = self.lpf['target'].shape[0]
-            self.lpf['data_pb'] = np.c_[np.ones((m, 1)), self.lpf['data']]
+            _split_index = int(train_percentage * len(load_profile))
+            self.train = {'data': load_profile[0:_split_index], 
+                          'target': voltage_profile[0:_split_index]}
+            m = self.train['target'].shape[0]
+            self.train['data_pb'] = np.c_[np.ones((m, 1)), self.train['data']]
+            # pb stands for plus bias
+            self.test = {'data': load_profile[_split_index+1:], 
+                         'target': voltage_profile[_split_index+1:]}
             self.calculateTheta()
             self.calculateBias()
-            self.predictWithModel(load_profile)
+            self.predictWithModel(self.test['data'])
             self.evaluateModel()
 
             if save_model:
@@ -193,10 +204,8 @@ class NormalEquation(object):
                 self.saveModel(self.model_name)
 
     def calculateTheta(self):
-        x = tf.constant(self.lpf['data_pb'],
-                        dtype=tf.float32, name="x")
-        y = tf.constant(self.lpf['target'], 
-                        dtype=tf.float32, name="y")
+        x = tf.constant(self.train['data_pb'], dtype=tf.float32, name="x")
+        y = tf.constant(self.train['target'], dtype=tf.float32, name="y")
         xt = tf.transpose(x)
         theta = tf.matmul(tf.matmul(tf.matrix_inverse(tf.matmul(xt, x)), xt),
                           y)
@@ -204,18 +213,24 @@ class NormalEquation(object):
             self.theta = theta.eval()
 
     def calculateBias(self):
-        self.bias = [self.theta[0] for i in range(self.lpf['target'].shape[0])]
+        self.bias = [self.theta[0] for i in 
+                     range(self.train['target'].shape[0])]
+        
 
     def predictWithModel(self, load_profile):
-        return np.dot(load_profile, self.theta[1:].T) + self.bias
+        adjusted_bias = []
+        for i in range(load_profile.shape[0]):
+            adjusted_bias.append(self.bias[0])
+        return np.dot(load_profile, self.theta[1:].T) + adjusted_bias
 
     def evaluateModel(self, plot_results=True):
         #TODO: plot results
-        prediction = self.predictWithModel(self.lpf['data'])
-        mse = np.mean((prediction.T[1:].T - self.lpf['target'].T[1:].T)**2)
-        mae = abs(np.mean((prediction.T[1:].T - self.lpf['target'].T[1:].T)))
-        print('normal equation mse: {}, mae: {}'.format(mse, mae))
-        return mae
+        prediction = self.predictWithModel(self.test['data'])
+        rmse = np.sqrt(
+                np.mean((prediction.T[1:].T - self.test['target'].T[1:].T)**2))
+#        mae = abs(np.mean((prediction.T[1:].T - self.lpf['target'].T[1:].T)))
+        print('normal equation RMSE: {}'.format(rmse))
+        return rmse
 
     def saveModel(self, model_name):
         """Encodes parametric model parameters into HDF5 binary data format"""
@@ -302,10 +317,11 @@ class TrainRNN(object):
 
 class HyperparamSearch():
     """Performs artificial neural network training using various parameters. 
-       Returns the mse/mae of each test
+       Returns the rmse of each test
     """
     
-    def __init__(self, load_profile=None, voltage_profile=None, search_type='grid'):
+    def __init__(self, load_profile=None, voltage_profile=None, 
+                 search_type='grid'):
         """Search_type is 'grid' or 'random'..."""
         
         self.solution_matrix = []
@@ -347,6 +363,7 @@ class HyperparamSearch():
                 end = time()
                 self.runtime = int(end - start)
                 self.exportResults()
+                
     
     def exportResults(self):
         """Saves results to file"""
@@ -378,7 +395,7 @@ class HyperparamSearch():
             self.solution_matrix = results
         
     def learningRateAnalysis(self, savefig=None):
-        """Plots that demonstrate the effect of alpha as the independent var
+        """Plots that demonstrate the effect of alpha as the independent var.
            :type: savefig: index of plot you want to save
         """
         
@@ -397,8 +414,27 @@ class HyperparamSearch():
             plt.xlabel('Learning Rate')
             plt.title('ANN Validation Accuracy Versus Learning Rate for ISH')
             if savefig == i:
-                plt.savefig('./data/print/analyis_learningrate.pdf')
+                plt.savefig('./data/print/analysis_learningrate.pdf')
             plt.show()
             learning_rate = []
         
-        
+
+def epochAnalysis(study_sizes=[5, 10, 15]):
+    """Returns the number of epochs required to meet Keras patience 
+       requirements for power flow studies of various sizes.
+    """
+    #TODO: some weird behaviour. Results seem dependent on size of input array
+    
+    import sys
+    sys.path.append('../')
+    from simhandler.powerflowsim import PowerFlowSim
+    
+    results = []
+    for size in study_sizes:
+        pfs = PowerFlowSim(50, './data/montecarlo' + str(size) + '.json')
+        ann = TrainANN(pfs.node_loads, pfs.node_voltages, no_epochs=3000,
+                       early_stop=True)
+        print('pfs and ann training for size {} complete'.format(size))
+        results.append([size, ann.history.epoch[-1]])
+    print(results)
+    return pfs, ann
