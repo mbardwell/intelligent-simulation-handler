@@ -66,7 +66,7 @@ class PowerFlowSim():
 
         nodes = self.network_param.participants # shorthanding
         for bus in nodes:
-            if nodes[bus].gen['profile'].size == 0:
+            if len(nodes[bus].gen['profile']) == 0:
                 continue
             else:
                 self.pypsa_network.add(
@@ -91,7 +91,7 @@ class PowerFlowSim():
                                        p_set=nodes[bus].load['profile']
                                        )
 
-    def setupLines(self, topology='web', x_lines=0.1, r_lines=0.1):
+    def setupLines(self, topology='web', x_lines=0.001, r_lines=0.001):
         """Adds power lines to network"""
                     
         def _addLine(bus, other_bus, x_line=x_lines, r_line=r_lines):
@@ -227,7 +227,7 @@ class PowerFlowSim():
         ax = plt.subplot(122)
         ax.set_xticks(np.arange(len(keys)) + 1)
         ax.set_xticklabels(keys, rotation=60)
-        plt.title('Bus Voltage Box Plots')
+        plt.title('Bus Voltage Violin Plots')
         plt.xlabel('Buses')
         plt.ylabel('Voltage (p.u.)')
         plt.violinplot(data)       
@@ -259,4 +259,4 @@ class PowerFlowSim():
                     )
             self.node_voltages = self.node_voltages.reshape(
                 len(self.pypsa_network.buses_t['v_mag_pu'].keys()),
-                self.length).T   
+                self.length).T
