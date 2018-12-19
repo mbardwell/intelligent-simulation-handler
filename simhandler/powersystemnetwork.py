@@ -10,6 +10,10 @@ import gzip
 import pickle
 import json
 import traceback
+from pathlib import Path
+import random
+
+filepath = Path(os.path.dirname(os.path.realpath(__file__)))
 
 class Network():
     """Builds network for power system load flow simulation."""
@@ -24,9 +28,9 @@ class Network():
     def getConfig(self, json_config):
         """Imports JSON-based configuration file."""
 
-        os.chdir(os.path.dirname(os.path.realpath(__file__)))
+        file = filepath / ('data/' + json_config.rsplit('/',1)[-1])
         try:
-            with open(json_config, 'r') as data_file:
+            with open(str(file), 'r') as data_file:
                 config = json.load(data_file)
             return config
         except IOError:
@@ -53,8 +57,8 @@ class Network():
     def generateRandomName(self):
         """To be replaced by names from json_config file when updated"""
 
-        import random
-        with open('./utils/us_census_male_names.txt', 'r') as namefile:
+        file = filepath / ('utils/' + 'us_census_male_names.txt')
+        with open(str(file), 'r') as namefile:
             names = namefile.read().splitlines()
         namefile.close()
         return random.choice(names)
@@ -76,12 +80,12 @@ class Participant():
             self.gen = self.profiles['gen']
             self.load = self.profiles['load']
 
-    def importTimeProfiles(self, filename):
+    def importTimeProfiles(self, file_name):
         """Decompress file contents and pipe into pickle object."""
         
-        path = './data/'
+        file = filepath / ('data/' + file_name)
         try:
-            f = gzip.open(path + filename, 'rb')
+            f = gzip.open(str(file), 'rb')
             profile = pickle.load(f)
             f.close()
             return profile
@@ -89,11 +93,11 @@ class Participant():
             print('Exception: ', ex)
             return None
 
-    def dumpTimeProfiles(self, filename):
+    def dumpTimeProfiles(self, file_name):
         """Pipe pickled data into compressed file."""
 
         try:
-            f = gzip.open(filename, 'wb')
+            f = gzip.open(file_name, 'wb')
             self.updateProfiles()
             pickle.dump(self.profiles,
                         f,
