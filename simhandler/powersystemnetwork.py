@@ -4,9 +4,12 @@ For handling PSLF network data
 University of Alberta, 2018
 """
 
+import sys
+import os
 import gzip
 import pickle
 import json
+import traceback
 
 class Network():
     """Builds network for power system load flow simulation."""
@@ -21,12 +24,13 @@ class Network():
     def getConfig(self, json_config):
         """Imports JSON-based configuration file."""
 
+        os.chdir(os.path.dirname(os.path.realpath(__file__)))
         try:
             with open(json_config, 'r') as data_file:
                 config = json.load(data_file)
             return config
-        except IOError as ex:
-            print('Exception: ', ex)
+        except IOError:
+            traceback.print_exc(file=sys.stdout)
             return None
         
     def saveConfig(self, model_name):
