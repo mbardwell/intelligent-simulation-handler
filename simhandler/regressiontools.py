@@ -17,6 +17,7 @@ from keras.layers import Dense
 from keras.layers import Activation
 from keras.layers import Reshape
 from keras.layers import SimpleRNN
+from keras import backend
 import matplotlib.pyplot as plt
 import numpy as np
 import h5py
@@ -25,10 +26,10 @@ class ANNRegression():
     """Trains feedforward ANN using power system load flow load/voltage data"""
 
     def __init__(self, load_profile=None, voltage_profile=None,
-                 train_percentage=0.7, learning_rate=0.001, no_hidden_layers=1,
-                 layer_density=64, dropout=False, no_epochs=1000,
-                 early_stop=False, save_model=False,
-                 plot_results=False):
+                 train_percentage=0.7, optimizer='Adam', lr=0.001,
+                 no_hidden_layers=1, layer_density=64, dropout=False,
+                 batch_size=32, no_epochs=1000, early_stop=False,
+                 save_model=False, plot_results=False):
 
         if load_profile is not None and voltage_profile is not None:
             _split_index = int(train_percentage * len(load_profile))
@@ -38,9 +39,9 @@ class ANNRegression():
             self.test_data = load_profile[_split_index+1:]
             self.test_labels = voltage_profile[_split_index+1:]
 
-            self.buildModel(learning_rate, no_hidden_layers, layer_density,
+            self.buildModel(optimizer, lr, no_hidden_layers, layer_density,
                             dropout)
-            self.trainModel(no_epochs, early_stop)
+            self.trainModel(batch_size, no_epochs, early_stop)
             self.evaluateModel()
             self.predictWithModel(plot_results)
             if save_model:
@@ -48,11 +49,13 @@ class ANNRegression():
                                replace(':', '-').replace(' ', '_')
                 self.saveModel(self.model_name)
 
-    def buildModel(self, learning_rate=0.001, no_hidden_layers=1,
+    def buildModel(self, optimizer='Adam', lr=0.001, no_hidden_layers=1,
                    layer_density=64, dropout=False):
         """
+        :type dropout: False (bool) or number between 0-1
         :rtype self.model: class 'keras.engine.sequential.Sequential'
         """
+        
         self.model = keras.Sequential()
         self.model.add(keras.layers.Dense(
             layer_density,
@@ -69,33 +72,45 @@ class ANNRegression():
                                               activation=tf.nn.relu))
         self.model.add(keras.layers.Dense(self.train_labels.shape[1]))
 
-        optimizer = tf.train.RMSPropOptimizer(learning_rate)
-
+        if optimizer == 'RMSprop':
+            opt = tf.train.RMSPropOptimizer(lr)
+        elif optimizer == 'Adam':
+            opt = tf.train.AdamOptimizer(lr)
+ 
+        def rmse(y_true, y_pred):
+            return backend.sqrt(backend.mean(backend.square(y_pred - y_true), 
+                                             axis=-1))        
+        
         # mse used instead of rmse because it one less step
         self.model.compile(loss='mse',
-                           optimizer=optimizer,
-                           metrics=['acc'])
+                           optimizer=opt,
+                           metrics=[rmse])
 #        self.model.summary() # for debug
 
-    def trainModel(self, no_epochs=1000, early_stop=False, _patience=200):
+    def trainModel(self, batch_size, no_epochs=1000, early_stop=False, 
+                   _patience=200):
         """Trains ANN using Tensorflow backend"""
 
         if early_stop is not False:
             early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
                                                        patience=_patience)
-            self.history = self.model.fit(self.train_data, self.train_labels,
+            self.history = self.model.fit(self.train_data, 
+                                          self.train_labels,
+                                          batch_size=batch_size,
                                           epochs=no_epochs,
                                           validation_split=0.2,
                                           verbose=0, callbacks=[early_stop])
         else:
-            self.history = self.model.fit(self.train_data, self.train_labels,
+            self.history = self.model.fit(self.train_data, 
+                                          self.train_labels,
+                                          batch_size=batch_size,
                                           epochs=no_epochs,
                                           validation_split=0.2, verbose=0)
 
     def evaluateModel(self):
         """Evalutes keras ann model against test data"""
 
-        [loss, mae] = self.model.evaluate(self.test_data, self.test_labels, 
+        [loss, val] = self.model.evaluate(self.test_data, self.test_labels, 
         verbose=0)
         rmse = np.sqrt(loss)
 #        print('ANN RMSE:', rmse) #debug
@@ -194,11 +209,11 @@ class ParametricRegression():
                          'target': voltage_profile[_split_index+1:]}
             self.calculateTheta()
             self.calculateBias()
-            self.predictWithModel(self.test['data'])
-            self.evaluateModel()
+            if self.evaluateModel() > 1:
+                print('parametric regression rmse too high. Run ANN')
 
             if save_model:
-                self.model_name = 'ne_model_' + \
+                self.model_name = 'para_model_' + \
                 str(datetime.datetime.now()).\
                 replace(':', '-').replace(' ', '_')
                 self.saveModel(self.model_name)
@@ -224,12 +239,10 @@ class ParametricRegression():
         return np.dot(load_profile, self.theta[1:].T) + adjusted_bias
 
     def evaluateModel(self, plot_results=True):
-        #TODO: plot results
         prediction = self.predictWithModel(self.test['data'])
         rmse = np.sqrt(
                 np.mean((prediction.T[1:].T - self.test['target'].T[1:].T)**2))
-#        mae = abs(np.mean((prediction.T[1:].T - self.lpf['target'].T[1:].T)))
-        print('normal equation RMSE: {}'.format(rmse))
+#        print('normal equation RMSE: {}'.format(rmse)) #debug
         return rmse
 
     def saveModel(self, model_name):
@@ -330,33 +343,33 @@ class HyperparamSearch():
             start = time()
             tg = {} # tg is short for training grid
             if search_type == 'grid':
-                tg['learning_rate'] = np.arange(0.001,0.1,0.02)
+                tg['lr'] = np.arange(0.001,0.1,0.02)
                 tg['no_hidden_layers'] = np.arange(1,2,1)
                 tg['layer_density'] = np.arange(50,60,10)
-                self.params = [len(tg['learning_rate']), 
+                self.params = [len(tg['lr']), 
                                    len(tg['no_hidden_layers']),
                                    len(tg['layer_density'])]
                 self.solution_matrix.append(self.params)
                 #TODO: tg['dropout'] = np.array([False, True])
                 #TODO: tg['early_stop'] = np.array([False, True])
-                for i in range(len(tg['learning_rate'])):
+                for i in range(len(tg['lr'])):
                     for j in range(len(tg['no_hidden_layers'])):
                         for k in range(len(tg['layer_density'])):
-                            ann = TrainANN(
+                            ann = ANNRegression(
                                     load_profile, 
                                     voltage_profile, 
-                                    learning_rate=tg['learning_rate'][i],
+                                    lr=tg['lr'][i],
                                     no_hidden_layers=tg['no_hidden_layers'][j],
                                     layer_density=tg['layer_density'][k]
                                     )
                             self.solution_matrix.append(
-                                    [tg['learning_rate'][i],
+                                    [tg['lr'][i],
                                     tg['no_hidden_layers'][j],
                                     tg['layer_density'][k],
                                     ann.evaluateModel()[0],
                                     ann.evaluateModel()[1]])
                             print('alpha: {}, layers: {}, density: {}'.format(
-                                    tg['learning_rate'][i],
+                                    tg['lr'][i],
                                     tg['no_hidden_layers'][j],
                                     tg['layer_density'][k]))
                 print(self.solution_matrix) #debug
@@ -399,16 +412,16 @@ class HyperparamSearch():
            :type: savefig: index of plot you want to save
         """
         
-        learning_rate = []
+        lr = []
         self.params = [int(x) for x in self.solution_matrix[0]]
         self.solution_matrix.pop(0)
         for i in range(self.params[1]*self.params[2]):
             for j in range(i, len(self.solution_matrix), 
                            self.params[1]*self.params[2]):
-                learning_rate.append(self.solution_matrix[j])
-            learning_rate = np.array(learning_rate).T
-            plt.plot(learning_rate[0], learning_rate[3], 'r-',
-                     learning_rate[0], learning_rate[4], 'b-')
+                lr.append(self.solution_matrix[j])
+            lr = np.array(lr).T
+            plt.plot(lr[0], lr[3], 'r-',
+                     lr[0], lr[4], 'b-')
             plt.legend(['MSE', 'MAE'])
             plt.ylabel('MSE/MAE Magnitude')
             plt.xlabel('Learning Rate')
@@ -416,7 +429,7 @@ class HyperparamSearch():
             if savefig == i:
                 plt.savefig('./data/print/analysis_learningrate.pdf')
             plt.show()
-            learning_rate = []
+            lr = []
         
 
 def epochAnalysis(study_sizes=[5, 10, 15]):
