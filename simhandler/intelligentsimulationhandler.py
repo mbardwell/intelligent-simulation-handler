@@ -9,7 +9,7 @@ sys.path.append('../') # when running code locally, this includes simhandler
 import os
 from simhandler.powersystemnetwork import Network
 from simhandler.powerflowsim import PowerFlowSim
-from simhandler.regressiontools import TrainANN, NormalEquation
+from simhandler.regressiontools import ANNRegression, ParametricRegression
 
 class IntelligentSimulationHandler():
     """Decides on whether to use look-up table or run a new power system
@@ -87,20 +87,24 @@ class IntelligentSimulationHandler():
                     and self.compareGenLoadStorage(x['profiles'])):
 
                 if len(x['profiles']) > 10000:
-                    TrainANN().loadModel(x['lookup_table'])
+                    ANNRegression().loadModel(x['lookup_table'])
                 else:
-                    NormalEquation().loadModel(x['lookup_table'])
+                    ParametricRegression().loadModel(x['lookup_table'])
 
                 self.compatible_network = file
-                print(self.compatible_network)
+                print('Compatible network found in file: ', 
+                      self.compatible_network)
+                break
 
         if self.compatible_network is None:
             print('No compatible look up table found. Running simulation')
             pfs = PowerFlowSim(100, self.json_config)
             
             if pfs.node_loads.shape[1] > 10000:
-                ann = TrainANN(pfs.node_loads, pfs.node_voltages, save_model=True)
+                ann = ANNRegression(pfs.node_loads, pfs.node_voltages, 
+                               save_model=True)
                 self.network.saveConfig(ann.model_name)
             else:
-                neqn = NormalEquation(pfs.node_loads, pfs.node_voltages, True)
+                neqn = ParametricRegression(pfs.node_loads, pfs.node_voltages, 
+                                            True)
                 self.network.saveConfig(neqn.model_name)
