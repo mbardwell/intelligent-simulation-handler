@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Linear regression tools for Power Flow emulation
+Regression tools for power system load flow function mapping
 
 @author: Michael Bardwell, University of Alberta, Edmonton AB CAN
 """
