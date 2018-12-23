@@ -8,6 +8,7 @@ import sys
 import gzip
 import pickle
 import json
+from pathlib import Path
 
 def importZp(filename):
     """Decompress file contents and pipe into pickle object."""
@@ -17,25 +18,24 @@ def importZp(filename):
     f.close()
     return p_obj
 
-def dumpZp(filename, object):
+def dumpZp(file, object):
     """Pipe pickled data into compressed file."""
     
     try:
-        f = gzip.open(filename + '.zp', 'wb')
+        f = gzip.open(str(file), 'wb')
         pickle.dump(object, f, protocol=pickle.HIGHEST_PROTOCOL)
         f.close()
-        return True
     except:
-        return False
+        raise Exception('Monte Carlo loadgen profile was not generated.')
 
-def generateLoadProfile(length = 100, amplitude = 2):
+def generateLoadProfile(length=100, amplitude=2):
     """Generates loading profile."""
     
     return np.random.rand(int(length))*amplitude
 
-def generateMonteCarloBinaries(filename, starting_no = 0, 
-                               no_files = 1, amplitude = 2,
-                               writeoverfile = False):
+def generateMonteCarloBinaries(filename, starting_no=0, no_files=1, 
+                               length=20000, amplitude=2,
+                               writeoverfile=False):
     """Generates Monte Carlo binary files for power system load flow sim.
     
     type: filename: String. Should be the file you want to copy-modify
@@ -44,20 +44,20 @@ def generateMonteCarloBinaries(filename, starting_no = 0,
     type: starting_no: int. First suffix of generated monte carlo file
     type: amplitude: int. Generate rand profile between [0, amplitude]
     """
-    from pathlib import Path
     
-    network_data = importZp(filename)
+    network_data = importZp(filename) # imports file with desired dict
     for i in range(no_files):
-        dump_path = '../data/montecarlo' + str(starting_no + i)
-        if not Path(dump_path + '.zp').is_file() or writeoverfile:
-            network_data['load']['profile'] = generateLoadProfile(5e3, 
+        dump_path = Path.cwd() / 'data/generated_loadgen_profiles'
+        file = 'montecarlo' + str(starting_no + i) + '.zp'
+        if not (dump_path / file).is_file() or writeoverfile:
+            network_data['load']['profile'] = generateLoadProfile(length, 
                                                                   amplitude)
             if starting_no == 0 and i == 0: # only first profile needs gen
-                network_data['gen']['profile'] = np.ones(int(5e3))*5
+                network_data['gen']['profile'] = np.ones(int(length))*5
             else:
                 network_data['gen']['profile'] = np.array([])
-            dumpZp(dump_path, network_data)
-    
+            dumpZp(dump_path / file, network_data)
+
 def viewGenerationProfile(filename):
     """Plots generation profile.
     
