@@ -27,8 +27,8 @@ class Network():
 
     def getConfig(self, json_config):
         """Imports JSON-based configuration file."""
-
-        file = filepath / ('data/' + json_config.rsplit('/',1)[-1])
+        file = filepath / ('data/network_configurations/' + 
+                           json_config.rsplit('/',1)[-1])
         try:
             with open(str(file), 'r') as data_file:
                 config = json.load(data_file)
@@ -83,7 +83,7 @@ class Participant():
     def importTimeProfiles(self, file_name):
         """Decompress file contents and pipe into pickle object."""
         
-        file = filepath / ('data/' + file_name)
+        file = filepath / ('data/loadgen_profiles/' + file_name)
         try:
             f = gzip.open(str(file), 'rb')
             profile = pickle.load(f)

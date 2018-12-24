@@ -21,21 +21,21 @@
     {
       "generation": true,
       "logic_type": "binary",
-      "id": "18356",
+      "id": "example1",
       "load": true,
       "storage": false
     },
     {
       "generation": false,
       "logic_type": "binary",
-      "id": "18357",
+      "id": "example2",
       "load": true,
       "storage": false
     },
     {
       "generation": false,
       "logic_type": "binary",
-      "id": "18358",
+      "id": "example3",
       "load": true,
       "storage": false
     }
