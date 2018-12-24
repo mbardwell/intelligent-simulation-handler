@@ -39,7 +39,7 @@ def generateMonteCarloBinaries(filename, starting_no=0, no_files=1,
     """Generates Monte Carlo binary files for power system load flow sim.
     
     type: filename: String. Should be the file you want to copy-modify
-                    ex: '../data/18356'
+                    ex: './data/loadgen_profiles/example1'
     type: no_files: int. Number of files to create
     type: starting_no: int. First suffix of generated monte carlo file
     type: amplitude: int. Generate rand profile between [0, amplitude]
@@ -47,7 +47,7 @@ def generateMonteCarloBinaries(filename, starting_no=0, no_files=1,
     
     network_data = importZp(filename) # imports file with desired dict
     for i in range(no_files):
-        dump_path = Path.cwd() / 'data/generated_loadgen_profiles'
+        dump_path = Path.cwd() / 'data/loadgen_profiles'
         file = 'montecarlo' + str(starting_no + i) + '.zp'
         if not (dump_path / file).is_file() or writeoverfile:
             network_data['load']['profile'] = generateLoadProfile(length, 
@@ -68,34 +68,36 @@ def viewGenerationProfile(filename):
     plt.plot(sim['gen']['profile'])
         
 
-def generateJson(no_houses, topology='radial', auto_proceed = False):
+def generateJson(no_houses, topology='radial', auto_proceed=False):
     """Generates JSON file requried for power flow study.
     
     type: no_houses: int. Number of houses in monte carlo study
     type: auto_proceed: boolean. If True, binaries with be auto-created
                         WARNING - many binary files can require GB's of memory
     """
+
     def fileExists(no_houses):
         """Checks two things. If JSON file and required binaries exist.
         
         type: no_houses: int. Number of houses in monte carlo study
         """
-        from pathlib import Path
         
         proceed_flag = auto_proceed
         for i in range(no_houses):
-            file_path = Path('../data/' + 'montecarlo' + str(i) + '.zp')
+            file_path = Path.cwd() / ('data/' + 'montecarlo' + str(i) + '.zp')
             
             if not file_path.is_file() and not proceed_flag:
-                if input('WARN: Will create binaries. Proceed? Y/N ') == 'Y':
+                if input('WARNING: Will create binaries. Proceed? Y/N ') \
+                == 'Y':
                     proceed_flag = True
                 else:
                     print('Binaries not available. Process aborted')
                     sys.exit(1)
             if proceed_flag == True:
-                generateMonteCarloBinaries('../data/' + '18356', i)
+                generateMonteCarloBinaries('./data/loadgen_profiles/' + 
+                                           'example1', i)
 
-        my_file = Path('../data/montecarlo' + str(no_houses) + '.json')
+        my_file = Path.cwd() / ('data/montecarlo' + str(no_houses) + '.json')
         if my_file.is_file():
             return True
         else: 
@@ -127,7 +129,8 @@ def generateJson(no_houses, topology='radial', auto_proceed = False):
             for i in range(no_houses):
                 connection_rows = []
                 for j in range(no_houses):
-                    if i == j or j < radial_constant*i+1 or j > radial_constant*(i+1):
+                    if i == j or j < radial_constant*i+1 \
+                    or j > radial_constant*(i+1):
                         connection_rows.append(0)
                     else:
                         connection_rows.append(1)
@@ -165,7 +168,7 @@ def generateJson(no_houses, topology='radial', auto_proceed = False):
         
         # start_datetime entry to be replaced with below eventually
         # str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        data = {"profile_path" : './data/', 
+        data = {"profile_path" : './data/loadgen_profiles/', 
                 "start_datetime" : '2016-04-01 0:0:0',
                 "study": 'TODO: Prompt ISH user for name of study',
                 "lookup_table": False,
@@ -173,6 +176,7 @@ def generateJson(no_houses, topology='radial', auto_proceed = False):
                 "profiles": profiles
                 }
                 
-        with open('../data/montecarlo' + str(no_houses) + '.json', 'w')\
+        with open('./data/network_configurations/montecarlo' + 
+                  str(no_houses) + '.json', 'w')\
         as f:
             json.dump(data, f, indent = 2)
