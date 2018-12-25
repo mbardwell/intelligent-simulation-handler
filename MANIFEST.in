@@ -1,0 +1,5 @@
+include simhandler/utils/us_census_male_names.txt
+include simhandler/data/network_configurations/3node.json
+include simhandler/data/loadgen_profiles/example1.zp
+include simhandler/data/loadgen_profiles/example2.zp
+include simhandler/data/loadgen_profiles/example3.zp
