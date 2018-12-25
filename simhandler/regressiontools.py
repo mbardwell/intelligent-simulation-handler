@@ -45,7 +45,7 @@ class ANNRegression():
                             dropout)
             self.trainModel(batch_size, no_epochs, early_stop)
             self.evaluateModel()
-            self.predictWithModel(plot_results)
+            self.predictWithModel(self.test_data, plot_results)
             if save_model:
                 self.model_name = 'ann_model_' + str(datetime.datetime.now()).\
                                replace(':', '-').replace(' ', '_')
@@ -118,10 +118,10 @@ class ANNRegression():
 #        print('ANN RMSE:', rmse) #debug
         return rmse
 
-    def predictWithModel(self, plot_results=True):
+    def predictWithModel(self, load_profile, plot_results=False):
         """Makes predictions by applying learned ANN model on test data"""
 
-        test_predictions = self.model.predict(self.test_data)
+        test_predictions = self.model.predict(load_profile)
 
         if plot_results:
             plt.plot(self.test_labels, test_predictions, 'o')
@@ -141,6 +141,8 @@ class ANNRegression():
             plt.ylabel("Count")
             plt.show()
             self.plotHistory()
+            
+        return test_predictions
 
     def plotHistory(self, savefig=False):
         """Plot learning curve"""
@@ -177,14 +179,15 @@ class ANNRegression():
     def loadModel(self, model_name):
         """Decodes a JSON file into a keras model"""
 
-        path = './data/function_mappings/'
+        path = Path(os.path.dirname(__file__)) / 'data/function_mappings'
         try:
-            with open(path + model_name + '.json', 'r') as ann_model_json:
+            with (path / (model_name + '.json')).open('r') as ann_model_json:
                 model_json_string = ann_model_json.read().\
                 replace('\\', '')[1:-1]
                 model = model_from_json(model_json_string)
             ann_model_json.close()
-            model.load_weights(path + model_name + '.h5', by_name=False)
+            model.load_weights(str(path / (model_name + '.h5')), by_name=False)
+            self.model = model
             print('Opening ANN-derived look up table')
             return model
         except BaseException as ex:
@@ -231,9 +234,7 @@ class ParametricRegression():
             self.theta = theta.eval()
 
     def calculateBias(self):
-        self.bias = [self.theta[0] for i in 
-                     range(self.train['target'].shape[0])]
-        
+        self.bias = [self.theta[0] for i in range(self.theta.shape[1])]
 
     def predictWithModel(self, load_profile):
         adjusted_bias = []
@@ -262,7 +263,9 @@ class ParametricRegression():
         path = Path(os.path.dirname(__file__)) / 'data/function_mappings/'
         print(path / (model_name + '.h5'))
         try:
-            self.theta = h5py.File(str(path / (model_name + '.h5')), 'r')['data']
+            self.theta = h5py.File(str(path / (model_name + '.h5')), 
+                                   'r')['data']
+            self.calculateBias()
             print('Opening NE-derived function map')
             return self.theta
         except BaseException as ex:
