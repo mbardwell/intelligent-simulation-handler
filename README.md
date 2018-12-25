@@ -7,8 +7,23 @@
 
 ### How do I get set up? ###
 
-* Install dependencies using pip install -r requirements.txt
+* *pip install simhandler*
+* To run the basic 3 node example:
+  1. Download [3node.json](https://github.com/mbardwell/intelligent-simulation-handler/tree/master/simhandler/data/network_configurations) file and put it somewhere convenient (ie: Downloads folder) as *3node.json*
+    *For example, C:\Users\mikey\Downloads\3node.json
+  2. In a Python editor write the following basic test:
+  
+'''
+import numpy as np
+from simhandler.smartsim import SmartPSLF
 
+configuration_file = *insert path to your 3node.json file* (ex: C:/Users/mikey/Downloads/3node.json')
+sim = SmartPSLF(configuration_file)
+
+fake_load_profile = np.ones((10,3)) # Ten timesteps, three input nodes
+print(sim.map.predictWithModel(fake_load_profile)) # Prints out ten voltage timesteps. Three nodes per timestep
+'''
+     
 ### Contribution guidelines ###
 
 * Follow PEP8 guidelines with the following exception: use lowercaseUppercase function naming instead of snake_case
