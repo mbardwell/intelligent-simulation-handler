@@ -6,6 +6,7 @@ Regression tools for power system load flow function mapping
 """
 
 import sys
+import os
 import datetime
 import json
 from time import time
@@ -21,6 +22,7 @@ from keras import backend
 import matplotlib.pyplot as plt
 import numpy as np
 import h5py
+from pathlib import Path
 
 class ANNRegression():
     """Trains feedforward ANN using power system load flow load/voltage data"""
@@ -163,18 +165,19 @@ class ANNRegression():
         """Save learned ANN model"""
         
         ## TO DO: Test this function
+        path = Path(os.path.dirname(__file__)) / 'data/function_mappings'
         model_json = self.model.to_json()
-        with open('./data/lookup_tables/' + name + ".json", "w") as file:
+        with open(str(path / (name + ".json")), "w") as file:
             json.dump(model_json, file)
         file.close()
 
         # serialize weights to HDF5
-        self.model.save_weights('./data/lookup_tables/' + name + ".h5")
+        self.model.save_weights(str(path / (name + ".h5")))
 
     def loadModel(self, model_name):
         """Decodes a JSON file into a keras model"""
 
-        path = './data/lookup_tables/'
+        path = './data/function_mappings/'
         try:
             with open(path + model_name + '.json', 'r') as ann_model_json:
                 model_json_string = ann_model_json.read().\
@@ -197,7 +200,7 @@ class ParametricRegression():
 
     def __init__(self, load_profile=None, voltage_profile=None,
                  train_percentage=0.7, save_model=False):
-
+        
         if load_profile is not None and voltage_profile is not None:
             _split_index = int(train_percentage * len(load_profile))
             self.train = {'data': load_profile[0:_split_index], 
@@ -247,19 +250,20 @@ class ParametricRegression():
 
     def saveModel(self, model_name):
         """Encodes parametric model parameters into HDF5 binary data format"""
-
-        path = './data/lookup_tables/'
-        with h5py.File(path + model_name + '.h5', 'w') as file:
+        
+        path = Path(os.path.dirname(__file__)) / 'data/function_mappings/'
+        with h5py.File(str(path / (model_name + '.h5')), 'w') as file:
             file.create_dataset(name='data', data=np.array(self.theta))
         file.close()
 
     def loadModel(self, model_name):
         """Decodes HDF5 binary data format into parametric model parameters"""
-
-        path = './data/lookup_tables/'
+    
+        path = Path(os.path.dirname(__file__)) / 'data/function_mappings/'
+        print(path / (model_name + '.h5'))
         try:
-            self.theta = h5py.File(path + model_name + '.h5', 'r')['data']
-            print('Opening NE-derived look up table')
+            self.theta = h5py.File(str(path / (model_name + '.h5')), 'r')['data']
+            print('Opening NE-derived function map')
             return self.theta
         except BaseException as ex:
             print('Line {} - lookup table loading failed. {}'.format(
@@ -445,7 +449,7 @@ def epochAnalysis(study_sizes=[5, 10, 15]):
     results = []
     for size in study_sizes:
         pfs = PowerFlowSim(50, './data/montecarlo' + str(size) + '.json')
-        ann = TrainANN(pfs.node_loads, pfs.node_voltages, no_epochs=3000,
+        ann = ANNRegression(pfs.node_loads, pfs.node_voltages, no_epochs=3000,
                        early_stop=True)
         print('pfs and ann training for size {} complete'.format(size))
         results.append([size, ann.history.epoch[-1]])
