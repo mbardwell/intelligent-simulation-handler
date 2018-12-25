@@ -16,33 +16,33 @@
       0
     ]
   ],
-  "lookup_table": "ne_model_2018-12-05_15-48-39.241878",
+  "start_datetime": "2016-04-01 0:0:0",
   "profiles": [
     {
+      "load": true,
       "generation": true,
-      "logic_type": "binary",
       "id": "example1",
-      "load": true,
-      "storage": false
+      "storage": false,
+      "logic_type": "binary"
     },
     {
+      "load": true,
       "generation": false,
-      "logic_type": "binary",
       "id": "example2",
-      "load": true,
-      "storage": false
+      "storage": false,
+      "logic_type": "binary"
     },
     {
-      "generation": false,
-      "logic_type": "binary",
-      "id": "example3",
       "load": true,
-      "storage": false
+      "generation": false,
+      "id": "example3",
+      "storage": false,
+      "logic_type": "binary"
     }
   ],
+  "profile_path": "./",
   "study": {
     "description": "binary2-m4y16-super-load"
   },
-  "profile_path": "./",
-  "start_datetime": "2016-04-01 0:0:0"
+  "lookup_table": false
 }
