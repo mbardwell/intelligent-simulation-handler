@@ -13,12 +13,12 @@ import traceback
 from pathlib import Path
 import random
 
-filepath = Path(os.path.dirname(os.path.realpath(__file__)))
-
 class Network():
     """Builds network for power system load flow simulation."""
 
     def __init__(self, json_config, include_profiles=True):
+        """json_config: absolute path to json file"""
+        
         self.json_config = json_config
         self.config = self.getConfig(json_config)
         self.participants = {}
@@ -27,10 +27,9 @@ class Network():
 
     def getConfig(self, json_config):
         """Imports JSON-based configuration file."""
-        file = filepath / ('data/network_configurations/' + 
-                           json_config.rsplit('/',1)[-1])
+        
         try:
-            with open(str(file), 'r') as data_file:
+            with open(str(json_config), 'r') as data_file:
                 config = json.load(data_file)
             return config
         except IOError:
@@ -39,8 +38,12 @@ class Network():
         
     def saveConfig(self, model_name):
         self.config['lookup_table'] = model_name
-        with open(self.json_config, 'w') as config_file:
-            json.dump(self.config, config_file, indent = 2)
+        try:
+            with open(self.json_config, 'w') as config_file:
+                json.dump(self.config, config_file, indent = 2)
+        except IOError as ex:
+            print('File error: ', ex)
+            print('Debug: ', self.json_config, os.path.abspath(__file__))
 
     def addParticipants(self):
         """Adds all time-based profiles to participant attribute."""
@@ -56,8 +59,9 @@ class Network():
 
     def generateRandomName(self):
         """To be replaced by names from json_config file when updated"""
-
-        file = filepath / ('utils/' + 'us_census_male_names.txt')
+        
+        file_path = Path(os.path.dirname(os.path.realpath(__file__)))
+        file = file_path / ('utils/' + 'us_census_male_names.txt')
         with open(str(file), 'r') as namefile:
             names = namefile.read().splitlines()
         namefile.close()
@@ -83,6 +87,7 @@ class Participant():
     def importTimeProfiles(self, file_name):
         """Decompress file contents and pipe into pickle object."""
         
+        filepath = Path(os.path.dirname(os.path.realpath(__file__)))
         file = filepath / ('data/loadgen_profiles/' + file_name)
         try:
             f = gzip.open(str(file), 'rb')
