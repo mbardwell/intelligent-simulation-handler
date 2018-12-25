@@ -10,13 +10,16 @@ import pickle
 import json
 from pathlib import Path
 
-def importZp(filename):
+def importZp(file_name):
     """Decompress file contents and pipe into pickle object."""
     
-    f = gzip.open(filename + '.zp', 'rb')
-    p_obj = pickle.load(f)
-    f.close()
-    return p_obj
+    try:
+        f = gzip.open(str(file_name) + '.zp', 'rb')
+        p_obj = pickle.load(f)
+        f.close()
+        return p_obj
+    except IOError as ex:
+        print(ex)
 
 def dumpZp(file, object):
     """Pipe pickled data into compressed file."""
@@ -33,21 +36,21 @@ def generateLoadProfile(length=100, amplitude=2):
     
     return np.random.rand(int(length))*amplitude
 
-def generateMonteCarloBinaries(filename, starting_no=0, no_files=1, 
-                               length=20000, amplitude=2,
-                               writeoverfile=False):
+def generateMonteCarloBinaries(mod_file, starting_no=0, no_files=1, 
+                               length=20000, amplitude=2, writeoverfile=False):
     """Generates Monte Carlo binary files for power system load flow sim.
     
-    type: filename: String. Should be the file you want to copy-modify
+    type: mod_file: String. Should be the file you want to copy-modify
                     ex: './data/loadgen_profiles/example1'
     type: no_files: int. Number of files to create
     type: starting_no: int. First suffix of generated monte carlo file
     type: amplitude: int. Generate rand profile between [0, amplitude]
+    type: filename: String. Default 'montecarlo'
     """
     
-    network_data = importZp(filename) # imports file with desired dict
+    network_data = importZp(mod_file) # imports file with desired dict
     for i in range(no_files):
-        dump_path = Path.cwd() / 'data/loadgen_profiles'
+        dump_path = Path(__file__).parent / 'data/loadgen_profiles'
         file = 'montecarlo' + str(starting_no + i) + '.zp'
         if not (dump_path / file).is_file() or writeoverfile:
             network_data['load']['profile'] = generateLoadProfile(length, 
@@ -84,24 +87,25 @@ def generateJson(no_houses, topology='radial', auto_proceed=False):
         
         proceed_flag = auto_proceed
         for i in range(no_houses):
-            file_path = Path.cwd() / ('data/' + 'montecarlo' + str(i) + '.zp')
+            file_path = Path(__file__).parent /\
+            ('data/montecarlo' + str(i) + '.zp')
             
             if not file_path.is_file() and not proceed_flag:
-                user_input = input('WARNING: Will create binaries. \
-                                   Proceed? Y/N ')
-                if user_input == 'Y':
+                prompt = input('WARNING: Will create binaries. Proceed? Y/N ')
+                if prompt == 'Y':
                     proceed_flag = True
-                elif user_input == 'N':
+                elif prompt == 'N':
                     print('Binaries not available. Process aborted')
                     sys.exit(1)
                 else:
                     print('Not a valid input. Y or N. Process aborted')
                     sys.exit(1)
             if proceed_flag == True:
-                generateMonteCarloBinaries('./data/loadgen_profiles/' + 
-                                           'example1', i)
+                generateMonteCarloBinaries(Path(__file__).parent / 
+                                           ('data/loadgen_profiles/example1'), 
+                                           i)
 
-        my_file = Path.cwd() / ('data/montecarlo' + str(no_houses) + '.json')
+        my_file = Path(__file__).parent / ('data/montecarlo' + str(no_houses) + '.json')
         if my_file.is_file():
             return True
         else: 
@@ -179,8 +183,9 @@ def generateJson(no_houses, topology='radial', auto_proceed=False):
                 "connections": generateConnections(topology),
                 "profiles": profiles
                 }
-                
-        with open('./data/network_configurations/montecarlo' + 
-                  str(no_houses) + '.json', 'w')\
-        as f:
+        
+        file = Path(__file__).parent /\
+        ('data/network_configurations/montecarlo' + str(no_houses) + '.json')
+        with file.open('w') as f:
             json.dump(data, f, indent = 2)
+            
