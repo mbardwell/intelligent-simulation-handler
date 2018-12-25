@@ -87,11 +87,15 @@ def generateJson(no_houses, topology='radial', auto_proceed=False):
             file_path = Path.cwd() / ('data/' + 'montecarlo' + str(i) + '.zp')
             
             if not file_path.is_file() and not proceed_flag:
-                if input('WARNING: Will create binaries. Proceed? Y/N ') \
-                == 'Y':
+                user_input = input('WARNING: Will create binaries. \
+                                   Proceed? Y/N ')
+                if user_input == 'Y':
                     proceed_flag = True
-                else:
+                elif user_input == 'N':
                     print('Binaries not available. Process aborted')
+                    sys.exit(1)
+                else:
+                    print('Not a valid input. Y or N. Process aborted')
                     sys.exit(1)
             if proceed_flag == True:
                 generateMonteCarloBinaries('./data/loadgen_profiles/' + 
