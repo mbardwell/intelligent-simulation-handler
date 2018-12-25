@@ -19,7 +19,7 @@ import numpy as np
 
 from simhandler.smartsim import SmartPSLF
 
-configuration_file = *insert path to your 3node.json file* (ex: C:/Users/mikey/Downloads/3node.json')
+configuration_file = *insert path to your 3node.json file* (ex: 'C:/Users/mikey/Downloads/3node.json')
 
 sim = SmartPSLF(configuration_file)
 
