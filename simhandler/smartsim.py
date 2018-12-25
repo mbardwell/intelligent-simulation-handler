@@ -10,14 +10,17 @@ import os
 from simhandler.powersystemnetwork import Network
 from simhandler.powerflowsim import PowerFlowSim
 from simhandler.regressiontools import ANNRegression, ParametricRegression
+from pathlib import Path
+#TODO: from simhandler.datageneration import generateJson
 
-class IntelligentSimulationHandler():
+class SmartPSLF():
     """Decides on whether to use look-up table or run a new power system
        load flow simulation
     """
 
     def __init__(self, json_config):
-        """Self.network is the network to be simulated and is the point
+        """type: json_config: String. Path to json config file.
+           Self.network is the network to be simulated and is the point
            of comparison for all of the methods in this class
         """
 
@@ -31,10 +34,13 @@ class IntelligentSimulationHandler():
         """Searches data folder for json files"""
 
         config_files = []
-        for root, _, files in os.walk('./data/'):
+        path = Path(os.path.dirname(__file__)) / 'data/network_configurations/'
+        for root, _, files in os.walk(str(path)):
             for file in files:
                 if file.endswith('.json') and not file.startswith('ann'):
-                    config_files.append(root + file)
+                    config_files.append(root + '\\' + file)
+        if config_files == []:
+            raise Exception('No configuration files found')
         return config_files
 
     def compareConnections(self, config, threshold=0.95):
@@ -100,11 +106,17 @@ class IntelligentSimulationHandler():
             print('No compatible look up table found. Running simulation')
             pfs = PowerFlowSim(100, self.json_config)
             
+            network_name = self.json_config.rsplit('/',1)[-1]
+            new_config = Path(os.path.dirname(__file__)) /\
+            ('data/network_configurations/' + network_name)
+            self.network.json_config = str(new_config)
             if pfs.node_loads.shape[1] > 10000:
                 ann = ANNRegression(pfs.node_loads, pfs.node_voltages, 
-                               save_model=True)
+                                    save_model=True)
                 self.network.saveConfig(ann.model_name)
             else:
                 neqn = ParametricRegression(pfs.node_loads, pfs.node_voltages, 
-                                            True)
+                                            save_model=True)
                 self.network.saveConfig(neqn.model_name)
+                
+sim = SmartPSLF('./data/network_configurations/3node.json')
