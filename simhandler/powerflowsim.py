@@ -19,11 +19,9 @@ pypsa.pf.logger.setLevel(logging.ERROR) # Use ERROR or DEBUG
 class PowerFlowSim():
     """Builds PyPSA-based power system load flow simulation."""
 
-    def __init__(self, length, 
-                 filename='./data/network_configurations/3node.json', 
-                 showall=False):
+    def __init__(self, length, filename, showall=False):
         """
-        type: length: int. Length of usable load profile
+        type: length: int. Number of samples
         type: filename: String. Config file storing power system network data
         type: showall: bool. Show plots after running simulation
         """
