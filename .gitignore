@@ -129,3 +129,4 @@ simhandler/test/thesis_tests/
 !simhandler/data/loadgen_profiles/example*.zp
 !simhandler/data/network_configurations/__init__.py
 !simhandler/data/network_configurations/3node.json
+.vscode/settings.json
