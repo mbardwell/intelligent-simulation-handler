@@ -9,8 +9,10 @@
 
 * *pip install simhandler*
 * To run the basic 3 node example:
-  1. Download [3node.json](https://github.com/mbardwell/intelligent-simulation-handler/tree/master/simhandler/data/network_configurations) file and put it somewhere convenient (ie: Downloads folder) as *3node.json*
-    *For example, C:\Users\mikey\Downloads\3node.json
+  1. Download [3node.json](https://github.com/mbardwell/intelligent-simulation-handler/tree/master/simhandler/data/network_configurations) file
+
+  *Put it somewhere convenient (ie: Downloads folder) as *3node.json*
+    
   2. In a Python editor write the following basic test:
   
 '''
@@ -28,6 +30,8 @@ fake_load_profile = np.ones((10,3)) # Ten timesteps, three input nodes
 print(sim.map.predictWithModel(fake_load_profile)) # Prints out ten voltage timesteps. Three nodes per timestep
 
 '''
+
+  3. It should look something like below![photo of basic test](https://user-images.githubusercontent.com/11367325/50410536-ce69e700-07b6-11e9-979e-51633080eb35.PNG)
      
 ### Contribution guidelines ###
 
