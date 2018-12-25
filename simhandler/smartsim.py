@@ -26,7 +26,7 @@ class SmartPSLF():
 
         self.json_config = json_config
         self.network = Network(json_config, False)
-        self.compatible_network = None
+        self.map = None
         self.config_files = self.gatherJsonFiles()
         self.comparisonTests()
 
@@ -92,17 +92,16 @@ class SmartPSLF():
                     and self.compareConnections(x)
                     and self.compareGenLoadStorage(x['profiles'])):
 
-                if len(x['profiles']) > 10000:
-                    ANNRegression().loadModel(x['lookup_table'])
+                if len(x['profiles']) > 2:
+                    function_map = ANNRegression()
                 else:
-                    ParametricRegression().loadModel(x['lookup_table'])
-
-                self.compatible_network = file
-                print('Compatible network found in file: ', 
-                      self.compatible_network)
+                    function_map = ParametricRegression()                    
+                function_map.loadModel(x['lookup_table'])
+                self.map = function_map
+                print('Compatible network found in file: ', file)
                 break
 
-        if self.compatible_network is None:
+        if self.map is None:
             print('No compatible look up table found. Running simulation')
             pfs = PowerFlowSim(100, self.json_config)
             
@@ -110,13 +109,13 @@ class SmartPSLF():
             new_config = Path(os.path.dirname(__file__)) /\
             ('data/network_configurations/' + network_name)
             self.network.json_config = str(new_config)
-            if pfs.node_loads.shape[1] > 10000:
-                ann = ANNRegression(pfs.node_loads, pfs.node_voltages, 
-                                    save_model=True)
-                self.network.saveConfig(ann.model_name)
+            if pfs.node_loads.shape[1] > 2:
+                function_map = ANNRegression(pfs.node_loads,
+                                             pfs.node_voltages,
+                                             save_model=True)
             else:
-                neqn = ParametricRegression(pfs.node_loads, pfs.node_voltages, 
-                                            save_model=True)
-                self.network.saveConfig(neqn.model_name)
-                
-sim = SmartPSLF('./data/network_configurations/3node.json')
+                function_map = ParametricRegression(pfs.node_loads,
+                                                    pfs.node_voltages,
+                                                    save_model=True)
+            self.network.saveConfig(function_map.model_name)
+            self.map = function_map
