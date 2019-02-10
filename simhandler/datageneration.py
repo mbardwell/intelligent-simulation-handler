@@ -92,8 +92,8 @@ def generateJson(no_houses, topology='radial', auto_proceed=False):
 
         proceed_flag = auto_proceed
         for i in range(no_houses):
-            file_path = Path(__file__).parent('data/montecarlo' + str(i) +
-                                              '.zp')
+            file_path = Path(__file__).parent /\
+            ('data/montecarlo' + str(i) +'.zp')
 
             if not file_path.is_file() and not proceed_flag:
                 prompt = input('WARNING: Will create binaries. Proceed? Y/N ')
@@ -189,7 +189,9 @@ def generateJson(no_houses, topology='radial', auto_proceed=False):
                 "profiles": profiles
                 }
 
-        file = Path(__file__).parent('data/network_configurations/montecarlo' +
-                                     str(no_houses) + '.json')
+        file = Path(__file__).parent /\
+        ('data/network_configurations/montecarlo' +
+         str(no_houses) + '.json')
+        
         with file.open('w') as f:
             json.dump(data, f, indent=2)

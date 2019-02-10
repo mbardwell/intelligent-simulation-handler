@@ -4,14 +4,15 @@ University of Alberta, 2018
 """
 
 import sys
-sys.path.append('../') # when running code locally, this includes simhandler
-                       # package.
+sys.path.append('../')  # when running code locally, this includes simhandler
+                        # package.
 import os
 from simhandler.powersystemnetwork import Network
 from simhandler.powerflowsim import PowerFlowSim
 from simhandler.regressiontools import ANNRegression, ParametricRegression
 from pathlib import Path
-#TODO: from simhandler.datageneration import generateJson
+# TODO: from simhandler.datageneration import generateJson
+
 
 class SmartPSLF():
     """Decides on whether to use look-up table or run a new power system
@@ -88,14 +89,14 @@ class SmartPSLF():
 
         for file in self.config_files.copy():
             x = Network(file, False).config
-            if (x['lookup_table'] is not False
-                    and self.compareConnections(x)
-                    and self.compareGenLoadStorage(x['profiles'])):
+            if (x['lookup_table'] is not False and
+                    self.compareConnections(x) and
+                    self.compareGenLoadStorage(x['profiles'])):
 
                 if len(x['profiles']) > 2:
                     function_map = ANNRegression()
                 else:
-                    function_map = ParametricRegression()                    
+                    function_map = ParametricRegression()
                 function_map.loadModel(x['lookup_table'])
                 self.map = function_map
                 print('Compatible network found in file: ', file)
@@ -104,10 +105,10 @@ class SmartPSLF():
         if self.map is None:
             print('No compatible look up table found. Running simulation')
             pfs = PowerFlowSim(100, self.json_config)
-            
-            network_name = self.json_config.rsplit('/',1)[-1]
+
+            network_name = self.json_config.rsplit('/', 1)[-1]
             new_config = Path(os.path.dirname(__file__)) /\
-            ('data/network_configurations/' + network_name)
+                ('data/network_configurations/' + network_name)
             self.network.json_config = str(new_config)
             if pfs.node_loads.shape[1] > 2:
                 function_map = ANNRegression(pfs.node_loads,

@@ -24,6 +24,7 @@ import numpy as np
 import h5py
 from pathlib import Path
 
+
 class ANNRegression():
     """Trains feedforward ANN using power system load flow load/voltage data"""
 
@@ -57,7 +58,7 @@ class ANNRegression():
         :type dropout: False (bool) or number between 0-1
         :rtype self.model: class 'keras.engine.sequential.Sequential'
         """
-        
+
         self.model = keras.Sequential()
         self.model.add(keras.layers.Dense(
             layer_density,
@@ -78,32 +79,32 @@ class ANNRegression():
             opt = tf.train.RMSPropOptimizer(lr)
         elif optimizer == 'Adam':
             opt = tf.train.AdamOptimizer(lr)
- 
+
         def rmse(y_true, y_pred):
-            return backend.sqrt(backend.mean(backend.square(y_pred - y_true), 
-                                             axis=-1))        
-        
+            return backend.sqrt(backend.mean(backend.square(y_pred - y_true),
+                                             axis=-1))
+
         # mse used instead of rmse because it one less step
         self.model.compile(loss='mse',
                            optimizer=opt,
                            metrics=[rmse])
 #        self.model.summary() # for debug
 
-    def trainModel(self, batch_size, no_epochs=1000, early_stop=False, 
+    def trainModel(self, batch_size, no_epochs=1000, early_stop=False,
                    _patience=200):
         """Trains ANN using Tensorflow backend"""
 
         if early_stop is not False:
             early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
                                                        patience=_patience)
-            self.history = self.model.fit(self.train_data, 
+            self.history = self.model.fit(self.train_data,
                                           self.train_labels,
                                           batch_size=batch_size,
                                           epochs=no_epochs,
                                           validation_split=0.2,
                                           verbose=0, callbacks=[early_stop])
         else:
-            self.history = self.model.fit(self.train_data, 
+            self.history = self.model.fit(self.train_data,
                                           self.train_labels,
                                           batch_size=batch_size,
                                           epochs=no_epochs,
@@ -112,8 +113,11 @@ class ANNRegression():
     def evaluateModel(self):
         """Evalutes keras ann model against test data"""
 
-        [loss, val] = self.model.evaluate(self.test_data, self.test_labels, 
-        verbose=0)
+        [loss, val] = self.model.evaluate(
+            self.test_data,
+            self.test_labels,
+            verbose=0
+            )
         rmse = np.sqrt(loss)
 #        print('ANN RMSE:', rmse) #debug
         return rmse
@@ -141,20 +145,20 @@ class ANNRegression():
             plt.ylabel("Count")
             plt.show()
             self.plotHistory()
-            
+
         return test_predictions
 
     def plotHistory(self, savefig=False):
         """Plot learning curve"""
-        
+
         plt.figure()
         plt.xlabel('Epoch')
         plt.ylabel('Root Mean Square Error')
         plt.title('ANN Training and Validation Loss Versus Epochs')
-        plt.plot(self.history.epoch, 
+        plt.plot(self.history.epoch,
                  np.array(self.history.history['loss']),
                  label='Training Loss')
-        plt.plot(self.history.epoch, 
+        plt.plot(self.history.epoch,
                  np.array(self.history.history['val_loss']),
                  label='Validation loss')
         plt.legend()
@@ -165,8 +169,8 @@ class ANNRegression():
 
     def saveModel(self, name='annmodel'):
         """Save learned ANN model"""
-        
-        ## TO DO: Test this function
+
+        # TO DO: Test this function
         path = Path(os.path.dirname(__file__)) / 'data/function_mappings'
         model_json = self.model.to_json()
         with open(str(path / (name + ".json")), "w") as file:
@@ -183,7 +187,7 @@ class ANNRegression():
         try:
             with (path / (model_name + '.json')).open('r') as ann_model_json:
                 model_json_string = ann_model_json.read().\
-                replace('\\', '')[1:-1]
+                 replace('\\', '')[1:-1]
                 model = model_from_json(model_json_string)
             ann_model_json.close()
             model.load_weights(str(path / (model_name + '.h5')), by_name=False)
@@ -203,15 +207,15 @@ class ParametricRegression():
 
     def __init__(self, load_profile=None, voltage_profile=None,
                  train_percentage=0.7, save_model=False):
-        
+
         if load_profile is not None and voltage_profile is not None:
             _split_index = int(train_percentage * len(load_profile))
-            self.train = {'data': load_profile[0:_split_index], 
+            self.train = {'data': load_profile[0:_split_index],
                           'target': voltage_profile[0:_split_index]}
             m = self.train['target'].shape[0]
             self.train['data_pb'] = np.c_[np.ones((m, 1)), self.train['data']]
             # pb stands for plus bias
-            self.test = {'data': load_profile[_split_index+1:], 
+            self.test = {'data': load_profile[_split_index+1:],
                          'target': voltage_profile[_split_index+1:]}
             self.calculateTheta()
             self.calculateBias()
@@ -220,8 +224,8 @@ class ParametricRegression():
 
             if save_model:
                 self.model_name = 'para_model_' + \
-                str(datetime.datetime.now()).\
-                replace(':', '-').replace(' ', '_')
+                 str(datetime.datetime.now()).\
+                 replace(':', '-').replace(' ', '_')
                 self.saveModel(self.model_name)
 
     def calculateTheta(self):
@@ -230,7 +234,7 @@ class ParametricRegression():
         xt = tf.transpose(x)
         theta = tf.matmul(tf.matmul(tf.matrix_inverse(tf.matmul(xt, x)), xt),
                           y)
-        with tf.Session(): ## do I even need this??
+        with tf.Session():  # do I even need this??
             self.theta = theta.eval()
 
     def calculateBias(self):
@@ -251,7 +255,7 @@ class ParametricRegression():
 
     def saveModel(self, model_name):
         """Encodes parametric model parameters into HDF5 binary data format"""
-        
+
         path = Path(os.path.dirname(__file__)) / 'data/function_mappings/'
         with h5py.File(str(path / (model_name + '.h5')), 'w') as file:
             file.create_dataset(name='data', data=np.array(self.theta))
@@ -259,11 +263,11 @@ class ParametricRegression():
 
     def loadModel(self, model_name):
         """Decodes HDF5 binary data format into parametric model parameters"""
-    
+
         path = Path(os.path.dirname(__file__)) / 'data/function_mappings/'
         print(path / (model_name + '.h5'))
         try:
-            self.theta = h5py.File(str(path / (model_name + '.h5')), 
+            self.theta = h5py.File(str(path / (model_name + '.h5')),
                                    'r')['data']
             self.calculateBias()
             print('Opening NE-derived function map')
@@ -277,7 +281,7 @@ class ParametricRegression():
 class TrainRNN(object):
     """TODO: Proof of concept only right now"""
 
-    def __init__(self, load_profile, voltage_profile, train_percentage=0.7, 
+    def __init__(self, load_profile, voltage_profile, train_percentage=0.7,
                  name='ann_model'):
         """
         :type load_profile: List[int], voltage_profile: List[int]
@@ -287,109 +291,110 @@ class TrainRNN(object):
         self.train_data = load_profile[0:_split_index]
         self.train_labels = voltage_profile[0:_split_index]
         print(self.train_data.shape, self.train_labels.shape)
-        
+
         self.test_data = load_profile[_split_index+1:]
         self.test_labels = voltage_profile[_split_index+1:]
-        
+
         self.name = name
-        
+
     def reshape(self, data):
         """Reshape data numpy array"""
-        
-        return data.reshape(data.shape[0], 1, data.shape[1])
 
+        return data.reshape(data.shape[0], 1, data.shape[1])
 
     def buildModel(self):
         """
-        :rtype self.model: class 'tensorflow.python.keras.engine.sequential.Sequential'
+        :rtype self.model: class 'keras.engine.sequential.Sequential'
         """
         inputdim = self.train_data.shape[1]
         hiddendim = 64
         outputdim = self.train_labels.shape[1]
-        
+
         self.model = Sequential()
         self.model.add(Dense(units=outputdim, input_dim=inputdim))
         self.model.add(Activation("relu"))
-        self.model.add(Reshape((1,inputdim)))
+        self.model.add(Reshape((1, inputdim)))
         self.model.add(SimpleRNN(hiddendim))
         self.model.add(Dense(units=outputdim))
         self.model.add(Activation("softmax"))
-        
-        self.model.compile(optimizer='rmsprop', loss = 'mse', metrics=['mae'])
-    
-    def trainModel(self, no_epochs = 1000):
+
+        self.model.compile(optimizer='rmsprop', loss='mse', metrics=['mae'])
+
+    def trainModel(self, no_epochs=1000):
         """
-        :type model: class 'tensorflow.python.keras.engine.sequential.Sequential'
+        :type model: class 'keras.engine.sequential.Sequential'
         :type epochs: int
         :rtype history: ??
         """
-            
+
         # Store training stats
-        self.history = self.model.fit(self.train_data, self.train_labels, 
+        self.history = self.model.fit(self.train_data, self.train_labels,
                                       epochs=no_epochs,
                                       validation_split=0.2, verbose=0)
-        
+
     def evaluateModel(self):
-        [loss, mae] = self.model.evaluate(self.test_data, self.test_labels, verbose=0)
+        [loss, mae] = self.model.evaluate(
+            self.test_data,
+            self.test_labels,
+            verbose=0)
         print("ANN regression loss: {}, mae: {}".format(loss, mae))
         return mae
-    
+
 
 class HyperparamSearch():
-    """Performs artificial neural network training using various parameters. 
+    """Performs artificial neural network training using various parameters.
        Returns the rmse of each test
     """
-    
-    def __init__(self, load_profile=None, voltage_profile=None, 
+
+    def __init__(self, load_profile=None, voltage_profile=None,
                  search_type='grid'):
         """Search_type is 'grid' or 'random'..."""
-        
+
         self.solution_matrix = []
-        
+
         if load_profile is not None and voltage_profile is not None:
             start = time()
-            tg = {} # tg is short for training grid
+            tg = {}  # tg is short for training grid
             if search_type == 'grid':
-                tg['lr'] = np.arange(0.001,0.1,0.02)
-                tg['no_hidden_layers'] = np.arange(1,2,1)
-                tg['layer_density'] = np.arange(50,60,10)
-                self.params = [len(tg['lr']), 
-                                   len(tg['no_hidden_layers']),
-                                   len(tg['layer_density'])]
+                tg['lr'] = np.arange(0.001, 0.1, 0.02)
+                tg['no_hidden_layers'] = np.arange(1, 2, 1)
+                tg['layer_density'] = np.arange(50, 60, 10)
+                self.params = [len(tg['lr']),
+                               len(tg['no_hidden_layers']),
+                               len(tg['layer_density'])]
                 self.solution_matrix.append(self.params)
-                #TODO: tg['dropout'] = np.array([False, True])
-                #TODO: tg['early_stop'] = np.array([False, True])
+                # TODO: tg['dropout'] = np.array([False, True])
+                # TODO: tg['early_stop'] = np.array([False, True])
                 for i in range(len(tg['lr'])):
                     for j in range(len(tg['no_hidden_layers'])):
                         for k in range(len(tg['layer_density'])):
                             ann = ANNRegression(
-                                    load_profile, 
-                                    voltage_profile, 
+                                    load_profile,
+                                    voltage_profile,
                                     lr=tg['lr'][i],
                                     no_hidden_layers=tg['no_hidden_layers'][j],
                                     layer_density=tg['layer_density'][k]
                                     )
                             self.solution_matrix.append(
                                     [tg['lr'][i],
-                                    tg['no_hidden_layers'][j],
-                                    tg['layer_density'][k],
-                                    ann.evaluateModel()[0],
-                                    ann.evaluateModel()[1]])
+                                     tg['no_hidden_layers'][j],
+                                     tg['layer_density'][k],
+                                     ann.evaluateModel()[0],
+                                     ann.evaluateModel()[1]])
                             print('alpha: {}, layers: {}, density: {}'.format(
                                     tg['lr'][i],
                                     tg['no_hidden_layers'][j],
                                     tg['layer_density'][k]))
-                print(self.solution_matrix) #debug
+                print(self.solution_matrix)  # debug
                 end = time()
                 self.runtime = int(end - start)
                 self.exportResults()
-                
-    
+
     def exportResults(self):
         """Saves results to file"""
-        
+
         counter = 0
-        with open('./data/hyperparamsearchresults_' + str(self.runtime) + 
+        with open('./data/hyperparamsearchresults_' + str(self.runtime) +
                   'seconds' + '.txt', 'w') as file:
             for training_session in self.solution_matrix:
                 for listitem in training_session:
@@ -400,30 +405,30 @@ class HyperparamSearch():
                 file.write('\n')
                 counter = 0
         file.close()
-        
+
     def importResults(self, runtime):
         """Imports hyperparameter search results file.
            :type: runtime: String
         """
-        
-        with open('./data/hyperparamsearchresults_' + runtime + 'seconds.txt', 
+
+        with open('./data/hyperparamsearchresults_' + runtime + 'seconds.txt',
                   'r') as file:
             results = []
             for line in file:
                 results.append([float(i) for i in line.replace('\n', '').
                                 split(', ')])
             self.solution_matrix = results
-        
+
     def learningRateAnalysis(self, savefig=None):
         """Plots that demonstrate the effect of alpha as the independent var.
            :type: savefig: index of plot you want to save
         """
-        
+
         lr = []
         self.params = [int(x) for x in self.solution_matrix[0]]
         self.solution_matrix.pop(0)
         for i in range(self.params[1]*self.params[2]):
-            for j in range(i, len(self.solution_matrix), 
+            for j in range(i, len(self.solution_matrix),
                            self.params[1]*self.params[2]):
                 lr.append(self.solution_matrix[j])
             lr = np.array(lr).T
@@ -437,23 +442,23 @@ class HyperparamSearch():
                 plt.savefig('./data/print/analysis_learningrate.pdf')
             plt.show()
             lr = []
-        
+
 
 def epochAnalysis(study_sizes=[5, 10, 15]):
-    """Returns the number of epochs required to meet Keras patience 
+    """Returns the number of epochs required to meet Keras patience
        requirements for power flow studies of various sizes.
     """
-    #TODO: some weird behaviour. Results seem dependent on size of input array
-    
+    # TODO: some weird behaviour. Results seem dependent on size of input array
+
     import sys
     sys.path.append('../')
     from simhandler.powerflowsim import PowerFlowSim
-    
+
     results = []
     for size in study_sizes:
         pfs = PowerFlowSim(50, './data/montecarlo' + str(size) + '.json')
         ann = ANNRegression(pfs.node_loads, pfs.node_voltages, no_epochs=3000,
-                       early_stop=True)
+                            early_stop=True)
         print('pfs and ann training for size {} complete'.format(size))
         results.append([size, ann.history.epoch[-1]])
     print(results)

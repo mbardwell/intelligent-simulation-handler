@@ -13,12 +13,13 @@ import traceback
 from pathlib import Path
 import random
 
+
 class Network():
     """Builds network for power system load flow simulation."""
 
     def __init__(self, json_config, include_profiles=True):
         """json_config: absolute path to json file"""
-        
+
         self.json_config = json_config
         self.config = self.getConfig(json_config)
         self.participants = {}
@@ -27,7 +28,7 @@ class Network():
 
     def getConfig(self, json_config):
         """Imports JSON-based configuration file."""
-        
+
         try:
             with open(str(json_config), 'r') as data_file:
                 config = json.load(data_file)
@@ -35,12 +36,12 @@ class Network():
         except IOError:
             traceback.print_exc(file=sys.stdout)
             return None
-        
+
     def saveConfig(self, model_name):
         self.config['lookup_table'] = model_name
         try:
             with open(self.json_config, 'w') as config_file:
-                json.dump(self.config, config_file, indent = 2)
+                json.dump(self.config, config_file, indent=2)
         except IOError as ex:
             print('File error: ', ex)
             print('Debug: ', self.json_config, os.path.abspath(__file__))
@@ -59,13 +60,14 @@ class Network():
 
     def generateRandomName(self):
         """To be replaced by names from json_config file when updated"""
-        
+
         file_path = Path(os.path.dirname(os.path.realpath(__file__)))
         file = file_path / ('utils/' + 'us_census_male_names.txt')
         with open(str(file), 'r') as namefile:
             names = namefile.read().splitlines()
         namefile.close()
         return random.choice(names)
+
 
 class Participant():
     """Participants handle time-based profiles of nodes in power system load
@@ -77,16 +79,16 @@ class Participant():
         """
 
         self.profiles = self.importTimeProfiles(filename)
-        self.gen= None
+        self.gen = None
         self.load = None
-        
+
         if self.profiles is not None:
             self.gen = self.profiles['gen']
             self.load = self.profiles['load']
 
     def importTimeProfiles(self, file_name):
         """Decompress file contents and pipe into pickle object."""
-        
+
         filepath = Path(os.path.dirname(os.path.realpath(__file__)))
         file = filepath / ('data/loadgen_profiles/' + file_name)
         try:
