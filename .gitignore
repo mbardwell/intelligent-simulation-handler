@@ -130,3 +130,4 @@ simhandler/test/thesis_tests/
 !simhandler/data/network_configurations/__init__.py
 !simhandler/data/network_configurations/3node.json
 .vscode/settings.json
+simhandler.code-workspace

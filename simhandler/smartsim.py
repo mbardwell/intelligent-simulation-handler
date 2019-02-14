@@ -3,13 +3,10 @@ Intelligent simulation handler (ISH) code by Mike Bardwell, MSc
 University of Alberta, 2018
 """
 
-import sys
-sys.path.append('../')  # when running code locally, this includes simhandler
-                        # package.
 import os
-from simhandler.powersystemnetwork import Network
-from simhandler.powerflowsim import PowerFlowSim
-from simhandler.regressiontools import ANNRegression, ParametricRegression
+from .powersystemnetwork import Network
+from .powerflowsim import PowerFlowSim
+from .regressiontools import ANNRegression, ParametricRegression
 from pathlib import Path
 # TODO: from simhandler.datageneration import generateJson
 

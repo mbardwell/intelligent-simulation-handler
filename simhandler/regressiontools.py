@@ -278,69 +278,6 @@ class ParametricRegression():
             return False
 
 
-class TrainRNN(object):
-    """TODO: Proof of concept only right now"""
-
-    def __init__(self, load_profile, voltage_profile, train_percentage=0.7,
-                 name='ann_model'):
-        """
-        :type load_profile: List[int], voltage_profile: List[int]
-        :type train_percentage: int, name: String
-        """
-        _split_index = int(train_percentage * len(load_profile))
-        self.train_data = load_profile[0:_split_index]
-        self.train_labels = voltage_profile[0:_split_index]
-        print(self.train_data.shape, self.train_labels.shape)
-
-        self.test_data = load_profile[_split_index+1:]
-        self.test_labels = voltage_profile[_split_index+1:]
-
-        self.name = name
-
-    def reshape(self, data):
-        """Reshape data numpy array"""
-
-        return data.reshape(data.shape[0], 1, data.shape[1])
-
-    def buildModel(self):
-        """
-        :rtype self.model: class 'keras.engine.sequential.Sequential'
-        """
-        inputdim = self.train_data.shape[1]
-        hiddendim = 64
-        outputdim = self.train_labels.shape[1]
-
-        self.model = Sequential()
-        self.model.add(Dense(units=outputdim, input_dim=inputdim))
-        self.model.add(Activation("relu"))
-        self.model.add(Reshape((1, inputdim)))
-        self.model.add(SimpleRNN(hiddendim))
-        self.model.add(Dense(units=outputdim))
-        self.model.add(Activation("softmax"))
-
-        self.model.compile(optimizer='rmsprop', loss='mse', metrics=['mae'])
-
-    def trainModel(self, no_epochs=1000):
-        """
-        :type model: class 'keras.engine.sequential.Sequential'
-        :type epochs: int
-        :rtype history: ??
-        """
-
-        # Store training stats
-        self.history = self.model.fit(self.train_data, self.train_labels,
-                                      epochs=no_epochs,
-                                      validation_split=0.2, verbose=0)
-
-    def evaluateModel(self):
-        [loss, mae] = self.model.evaluate(
-            self.test_data,
-            self.test_labels,
-            verbose=0)
-        print("ANN regression loss: {}, mae: {}".format(loss, mae))
-        return mae
-
-
 class HyperparamSearch():
     """Performs artificial neural network training using various parameters.
        Returns the rmse of each test
