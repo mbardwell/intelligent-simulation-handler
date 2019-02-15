@@ -5,13 +5,13 @@ University of Alberta, 2018
 """
 
 import sys
-import os
 import gzip
 import pickle
 import json
 import traceback
 from pathlib import Path
 import random
+from simhandler.datageneration import generateMonteCarloBinaries, generateJson
 
 
 class Network():
@@ -29,14 +29,23 @@ class Network():
     def getConfig(self, json_config):
         """Imports JSON-based configuration file."""
 
+        if 'montecarlo' in json_config and not Path(json_config).is_file():
+            no_features = int(str(json_config).rsplit('montecarlo',1)[-1].
+                             rsplit('.json')[0]) 
+            print('Generating montecarlo json with {} features'.
+                  format(no_features))
+            generateJson(no_features)
+            
         try:
-            with open(str(json_config), 'r') as data_file:
+            with open(json_config, 'r') as data_file:
                 config = json.load(data_file)
-            return config
+            data_file.close()
+            return config    
         except IOError:
             traceback.print_exc(file=sys.stdout)
-            return None
 
+            return None            
+        
     def saveConfig(self, model_name):
         self.config['lookup_table'] = model_name
         try:
@@ -44,7 +53,7 @@ class Network():
                 json.dump(self.config, config_file, indent=2)
         except IOError as ex:
             print('File error: ', ex)
-            print('Debug: ', self.json_config, os.path.abspath(__file__))
+            print('Debug: ', self.json_config, Path(__file__))
 
     def addParticipants(self):
         """Adds all time-based profiles to participant attribute."""
@@ -55,14 +64,15 @@ class Network():
             if current_name in self.participants.keys():
                 current_name = current_name + '_' + str(counter)
                 counter += 1
-            filename = profile['id'] + '.zp'
-            self.participants[current_name] = Participant(filename)
+            file_name = profile['id'] + '.zp'
+            self.participants[current_name] = Participant(file_name)
 
     def generateRandomName(self):
         """To be replaced by names from json_config file when updated"""
-
-        file_path = Path(os.path.dirname(os.path.realpath(__file__)))
+        
+        file_path = Path(__file__).parent
         file = file_path / ('utils/' + 'us_census_male_names.txt')
+
         with open(str(file), 'r') as namefile:
             names = namefile.read().splitlines()
         namefile.close()
@@ -74,12 +84,12 @@ class Participant():
        flow sims. Generation will be shorthanded as gen throughout this class.
     """
 
-    def __init__(self, filename):
+    def __init__(self, file_name):
         """self.gen/load keys: 'interval_s', 'units', 'profile', 'start_time'.
         """
 
-        self.profiles = self.importTimeProfiles(filename)
-        self.gen = None
+        self.profiles = self.importTimeProfiles(file_name)
+        self.gen= None
         self.load = None
 
         if self.profiles is not None:
@@ -88,17 +98,19 @@ class Participant():
 
     def importTimeProfiles(self, file_name):
         """Decompress file contents and pipe into pickle object."""
-
-        filepath = Path(os.path.dirname(os.path.realpath(__file__)))
-        file = filepath / ('data/loadgen_profiles/' + file_name)
+        
+        file = Path(__file__).parent / ('data/loadgen_profiles/' + file_name)
         try:
             f = gzip.open(str(file), 'rb')
             profile = pickle.load(f)
             f.close()
             return profile
-        except IOError as ex:
-            print('Exception: ', ex)
-            return None
+        except:
+            try:
+                generateMonteCarloBinaries(Path(__file__).parent /\
+                                           'data/loadgen_profiles/example1.zp')
+            except:
+                raise Exception('loadgen profiles not loaded')
 
     def dumpTimeProfiles(self, file_name):
         """Pipe pickled data into compressed file."""
@@ -129,3 +141,4 @@ class Participant():
         """TODO: Adds load to current load profile."""
 
         print(2)
+

@@ -13,12 +13,13 @@ from setuptools import find_packages, setup, Command
 
 # Package meta-data.
 NAME = 'simhandler'
-DESCRIPTION = 'Intelligent simulation handler for power system load flow simulations'
+DESCRIPTION = 'Intelligent simulation handler for power system load flow \
+simulations'
 URL = 'https://github.com/mbardwell/intelligent-simulation-handler'
 EMAIL = 'bardwell@ualberta.ca'
 AUTHOR = 'Mike Bardwell'
 REQUIRES_PYTHON = '>=3.5.0'
-VERSION = '0.0.1'
+VERSION = '1.0.1'
 
 # What packages are required for this module to be executed?
 REQUIRED = [

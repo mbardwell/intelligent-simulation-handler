@@ -62,7 +62,7 @@ class ANNRegression():
         self.model = keras.Sequential()
         self.model.add(keras.layers.Dense(
             layer_density,
-            activation=tf.nn.relu,
+            activation=tf.nn.sigmoid,
             input_shape=(self.train_data.shape[1],)))
         for _ in range(1, no_hidden_layers):
             if dropout:
@@ -72,7 +72,7 @@ class ANNRegression():
                     print('Drop not added to network. Must be a number\
                           between 0-1. {}'.format(ex))
             self.model.add(keras.layers.Dense(layer_density,
-                                              activation=tf.nn.relu))
+                                              activation=tf.nn.sigmoid))
         self.model.add(keras.layers.Dense(self.train_labels.shape[1]))
 
         if optimizer == 'RMSprop':
@@ -200,7 +200,7 @@ class ANNRegression():
             return False
 
 
-class ParametricRegression():
+class IdentityLinearRegression():
     """Trains linear parametric algorithm using power system load flow load/
        voltage data
     """
