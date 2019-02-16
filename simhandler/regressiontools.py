@@ -12,13 +12,6 @@ import json
 from time import time
 import tensorflow as tf
 from tensorflow import keras
-from keras.models import Sequential
-from keras.models import model_from_json
-from keras.layers import Dense
-from keras.layers import Activation
-from keras.layers import Reshape
-from keras.layers import SimpleRNN
-from keras import backend
 import matplotlib.pyplot as plt
 import numpy as np
 import h5py
@@ -81,8 +74,9 @@ class ANNRegression():
             opt = tf.train.AdamOptimizer(lr)
 
         def rmse(y_true, y_pred):
-            return backend.sqrt(backend.mean(backend.square(y_pred - y_true),
-                                             axis=-1))
+            return keras.backend.sqrt(
+                    keras.backend.mean(
+                     keras.backend.square(y_pred - y_true), axis=-1))
 
         # mse used instead of rmse because it one less step
         self.model.compile(loss='mse',
@@ -188,7 +182,7 @@ class ANNRegression():
             with (path / (model_name + '.json')).open('r') as ann_model_json:
                 model_json_string = ann_model_json.read().\
                  replace('\\', '')[1:-1]
-                model = model_from_json(model_json_string)
+                model = keras.models.model_from_json(model_json_string)
             ann_model_json.close()
             model.load_weights(str(path / (model_name + '.h5')), by_name=False)
             self.model = model

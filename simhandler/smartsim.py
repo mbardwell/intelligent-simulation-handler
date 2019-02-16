@@ -6,7 +6,7 @@ University of Alberta, 2018
 import os
 from .powersystemnetwork import Network
 from .powerflowsim import PowerFlowSim
-from .regressiontools import ANNRegression, ParametricRegression
+from .regressiontools import ANNRegression, IdentityLinearRegression
 from pathlib import Path
 # TODO: from simhandler.datageneration import generateJson
 
@@ -93,7 +93,7 @@ class SmartPSLF():
                 if len(x['profiles']) > 2:
                     function_map = ANNRegression()
                 else:
-                    function_map = ParametricRegression()
+                    function_map = IdentityLinearRegression()
                 function_map.loadModel(x['lookup_table'])
                 self.map = function_map
                 print('Compatible network found in file: ', file)
@@ -112,8 +112,7 @@ class SmartPSLF():
                                              pfs.node_voltages,
                                              save_model=True)
             else:
-                function_map = ParametricRegression(pfs.node_loads,
-                                                    pfs.node_voltages,
-                                                    save_model=True)
+                function_map = IdentityLinearRegression(
+                    pfs.node_loads, pfs.node_voltages, save_model=True)
             self.network.saveConfig(function_map.model_name)
             self.map = function_map
