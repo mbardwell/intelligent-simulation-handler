@@ -16,7 +16,7 @@ class SmartPSLF():
        load flow simulation
     """
 
-    def __init__(self, json_config):
+    def __init__(self, json_config, force_use_of_solver=False):
         """type: json_config: String. Path to json config file.
            Self.network is the network to be simulated and is the point
            of comparison for all of the methods in this class
@@ -26,7 +26,7 @@ class SmartPSLF():
         self.network = Network(json_config, False)
         self.map = None
         self.config_files = self.gatherJsonFiles()
-        self.comparisonTests()
+        self.comparisonTests(force_use_of_solver)
 
     def gatherJsonFiles(self):
         """Searches data folder for json files"""
@@ -81,26 +81,27 @@ class SmartPSLF():
             return False
         return True
 
-    def comparisonTests(self):
+    def comparisonTests(self, force_use_of_solver=False):
         """Compares json files in data folder to inputted json config file"""
 
-        for file in self.config_files.copy():
-            x = Network(file, False).config
-            if (x['lookup_table'] is not False and
-                    self.compareConnections(x) and
-                    self.compareGenLoadStorage(x['profiles'])):
+        if not force_use_of_solver:
+            for file in self.config_files.copy():
+                x = Network(file, False).config
+                if (x['lookup_table'] is not False and
+                        self.compareConnections(x) and
+                        self.compareGenLoadStorage(x['profiles'])):
+    
+                    if len(x['profiles']) > 2:
+                        function_map = ANNRegression()
+                    else:
+                        function_map = IdentityLinearRegression()
+                    function_map.loadModel(x['lookup_table'])
+                    self.map = function_map
+                    print('Compatible network found in file: ', file)
+                    break
 
-                if len(x['profiles']) > 2:
-                    function_map = ANNRegression()
-                else:
-                    function_map = IdentityLinearRegression()
-                function_map.loadModel(x['lookup_table'])
-                self.map = function_map
-                print('Compatible network found in file: ', file)
-                break
-
-        if self.map is None:
-            print('No compatible look up table found. Running simulation')
+        if self.map is None or force_use_of_solver:
+            print('No compatible look up table found. Deploying PyPSA solver')
             pfs = PowerFlowSim(100, self.json_config)
 
             network_name = self.json_config.rsplit('/', 1)[-1]

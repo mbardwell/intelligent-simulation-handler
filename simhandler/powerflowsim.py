@@ -74,7 +74,6 @@ class PowerFlowSim():
                     "Generator", "{}-{}".format(bus, "Gas"),
                     bus=bus,
                     p_nom=0.005,  # Nominal household power is 5 kW
-                    marginal_cost=0,  # REMOVE?
                     p_max_pu=nodes[bus].gen['profile']
                     )
 
@@ -181,7 +180,7 @@ class PowerFlowSim():
             plt.ylabel('Node Voltages')
             plt.title('blah')
             plt.show()
-            return plotdata[0].get_ydata(True)
+            return plotdata
         else:
             for bus in self.pypsa_network.buses_t['v_mag_pu'].keys():
                 plot.extend(plt.plot(

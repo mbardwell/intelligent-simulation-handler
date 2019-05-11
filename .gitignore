@@ -120,7 +120,8 @@ simhandler/data/*.*
 simhandler/data/function_mappings/*
 simhandler/data/loadgen_profiles/*
 simhandler/data/network_configurations/*
-simhandler/test/thesis_tests/
+simhandler/test/thesis_tests/*
+!simhandler/test/thesis_tests/hyperparameter_analysis.py
 
 # Custom Whitelist
 !simhandler/data/__init__.py

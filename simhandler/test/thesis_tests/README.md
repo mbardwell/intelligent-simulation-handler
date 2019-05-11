@@ -1,1 +1,1 @@
-This folder contains modules used to verify functionality for all high level modules
+This folder contains modules used to verify performance for all high level modules

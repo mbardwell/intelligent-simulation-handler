@@ -34,14 +34,18 @@ def dumpZp(file, object):
         raise Exception('Monte Carlo loadgen profile was not generated.')
 
 
-def generateLoadProfile(length=100, amplitude=2):
+def generateLoadProfile(length=100, amplitude=2, random=True):
     """Generates loading profile."""
-
-    return np.random.rand(int(length))*amplitude
+    
+    if random:
+        return np.random.rand(int(length))*amplitude
+    else:
+        return np.array([x/length for x in range(length)])*amplitude
 
 
 def generateMonteCarloBinaries(mod_file, starting_no=0, no_files=1,
-                               length=20000, amplitude=2, writeoverfile=False):
+                               length=20000, amplitude=2, writeoverfile=False,
+                               random=True):
     """Generates Monte Carlo binary files for power system load flow sim.
 
     type: mod_file: String. Should be the file you want to copy-modify
@@ -58,7 +62,8 @@ def generateMonteCarloBinaries(mod_file, starting_no=0, no_files=1,
         file = 'montecarlo' + str(starting_no + i) + '.zp'
         if not (dump_path / file).is_file() or writeoverfile:
             network_data['load']['profile'] = generateLoadProfile(length,
-                                                                  amplitude)
+                                                                  amplitude,
+                                                                  random)
             if starting_no == 0 and i == 0:  # only first profile needs gen
                 network_data['gen']['profile'] = np.ones(int(length))*5
             else:
@@ -76,7 +81,8 @@ def viewGenerationProfile(filename):
     plt.plot(sim['gen']['profile'])
 
 
-def generateJson(no_houses, topology='radial', auto_proceed=False):
+def generateJson(no_houses, topology='radial', auto_proceed=False, 
+                 random=True):
     """Generates JSON file requried for power flow study.
 
     type: no_houses: int. Number of houses in monte carlo study
