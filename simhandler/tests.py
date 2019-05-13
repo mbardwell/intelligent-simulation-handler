@@ -50,9 +50,9 @@ class TestNDimensionalDatasets(unittest.TestCase):
 
 class TestExtremaDetector(unittest.TestCase):
 
-    def test_polyhedron(self):
+    def test_fast_polytope(self):
         idx = (1, 3, 3)
-        testee = polyhedron(idx, 0, 4)
+        testee = fast_polytope(idx, 0, 4)
         answer = [(0, 3, 3), (2, 3, 3),
                   (1, 2, 3), (1, 4, 3),
                   (1, 3, 2), (1, 3, 4)]
@@ -68,7 +68,7 @@ class TestExtremaDetector(unittest.TestCase):
         f = decaying_sinewave_nd(x)
         eta = 1e-5
 
-        testee = len(extremum_locator(f, eta))
+        testee = len(extremum_locator(x, f, eta))
         answer = 27
         self.assertEqual(testee, answer)
 
