@@ -18,21 +18,22 @@ def polyhedron(x_i, min_value, max_value):
     points = []
     for idx in range(len(x_i)):
         point = list(x_i)  # create mutable list
-        point[idx] = point[idx] - 1
+        point[idx] -= 1
         if point[idx] >= min_value:
             points.append(tuple(point))
         point = list(x_i)  # create mutable list
-        point[idx] = point[idx] + 1
+        point[idx] += + 1
         if point[idx] <= max_value:
             points.append(tuple(point))
     return points
 
 
 # @brief extremum_locator: finds extremum in a dataset based on formula in
-# @brief https://web.njit.edu/~ansari/papers/04neurocomputing.pdf
+# https://web.njit.edu/~ansari/papers/04neurocomputing.pdf. It is that f is
+# is sorted according to it's independent variables. ie: f_(i-1), f_i, f_(i+1)
 # @param f: array like. Shape (# samples dim 0, ..., # samples dim n)
 # @param eta: float. A qualifier for what is considered an extremum.
-# @param eta: The smaller, the more likely an extremum will qualify
+# The smaller, the more likely an extremum will qualify
 # @returns: list of tuples
 def extremum_locator(f, eta):
     valid_points = []
