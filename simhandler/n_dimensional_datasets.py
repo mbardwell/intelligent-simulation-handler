@@ -5,6 +5,7 @@ Produces R^n -> R datasets for n in Z
 """
 
 import numpy as np
+from random import random
 
 
 # @brief mesh: n-dimensional mgrid
@@ -13,11 +14,28 @@ import numpy as np
 # @param stop: float
 # @param steps: float
 # @returns: nested list
-def mesh(n, start=-1, stop=1, steps=0.1):
+def mesh(n, start, stop, steps):
     if n < 1 or not isinstance(n, int):
-        raise ValueError('dimension passed to mesh is invalid')
+        raise ValueError("dimension passed to mesh is invalid")
     mgrid = np.mgrid[tuple(slice(start, stop+steps, steps) for _ in range(n))]
     return mgrid
+
+
+def stochastic_mesh(n, start, stop, N):
+    '''
+    @brief mesh: sorted, random n-dimensional layout with guaranteed domain
+    @param n: int. Number of dimensions
+    @param start: float
+    @param stop: float
+    @param N: int. Number samples
+    @returns: nested list
+    '''
+    if n < 1 or not isinstance(n, int):
+        raise ValueError("dimension passed to mesh is invalid")
+    if not isinstance(N, int):
+        raise ValueError("number of samples must be an integer")
+    grid = np.array([[start]+[random() for _ in range(N-2)]+[stop] for _ in range(n)])
+    return grid
 
 
 # @brief flattened_mesh: arranges mesh() return in shape (1, no samples)
