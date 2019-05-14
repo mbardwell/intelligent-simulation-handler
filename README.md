@@ -1,3 +1,5 @@
+![badge pypi](https://img.shields.io/pypi/v/simhandler.svg) ![badge license](https://img.shields.io/pypi/l/simhandler.svg)
+
 # intelligent-simulation-handler
 
 ### What is this repository for? ###
