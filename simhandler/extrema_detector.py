@@ -88,6 +88,13 @@ def mgrid_polytope(point, min_value, max_value):
     return points
 
 
+def init_cells(n):
+    cells = {}
+    for cell in range(2**n):
+        cells[cell] = None
+    return cells
+
+
 def polytope(x, ref_point):
     '''
     @brief polytope: find points in x that form smallest polytope around
@@ -98,26 +105,22 @@ def polytope(x, ref_point):
     @returns: list of ints. Indices of polytope points in x
     '''
     x = np.array(x)
-    if mgrid_shape(x):
+    if mgrid_shape(x) and x.shape[0] > 1:  # Omit 1D grids because some are not ordered
         # if mgrid shape we assume it is uniformly distributed. Then we can
         # use faster, mgrid_polytope function
         # TODO: either add uniform dist. check here or stop using mgrids
         samples_per_dimension = len(x[0])
-        return mgrid_polytope(point, 0, samples_per_dimension-1)
+        return mgrid_polytope(ref_point, 0, samples_per_dimension-1)
 
     for dim in range(len(x)-1):
         if len(x[dim]) != len(x[dim+1]):
             raise UserWarning("Each dimension must have same length")
-        else:
-            N = len(x[dim])
 
+    N = x.shape[1]
     distances = [euclidean_distance(x.T[i], x.T[ref_point]) for i in range(N)]
     sorted_eucl_distance_indices = np.argsort(distances)[1:]  # remove point
 
-    n = x.shape[0]
-    cells = {}
-    for cell in range(2**n):
-        cells[cell] = None
+    cells = init_cells(x.shape[0])
 
     count = 0
     for polytope_point in sorted_eucl_distance_indices:
@@ -125,7 +128,7 @@ def polytope(x, ref_point):
         if cells[cell] is None:
             cells[cell] = polytope_point
             count += 1
-        if count == range(2**n):
+        if count == range(2**x.shape[0]):
             break
 
     polytope_points = []
@@ -144,7 +147,7 @@ def extremum_locator(x, f, eta):
     @returns: list of tuples
     '''
     valid_points = []
-    no_points_in_polytope = 2*len(f.shape)
+    no_points_in_polytope = 2*x.shape[0]
     samples_per_dimension = f.shape[0]
     for idx, val in np.ndenumerate(f):
         neighbours = polytope(x, idx)
