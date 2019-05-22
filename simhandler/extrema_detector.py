@@ -12,11 +12,17 @@ from math import sqrt
 def euclidean_distance(point, reference):
     '''
     @brief euclidean_distance: distance between point and reference. Both
-    point and reference are in R^n
+    point and reference can be in R^. Must be the same dimension
     @param point: list. All coordinates in point
     @param reference: list. All coordinates in reference
     @returns float
     '''
+    if not (isinstance(point, list) and isinstance(reference, list)):
+        raise TypeError("point: {}, type: {}, reference: {}, type: {} are\
+not lists".format(point, type(point), reference, type(reference)))
+    if len(point) != len(reference):
+        raise ValueError("length of point not equal to reference")
+
     distance = 0
     for dim in range(len(reference)):
         distance += (reference[dim]-point[dim])**2
@@ -28,26 +34,22 @@ def which_cell(point, reference):
     @brief which_cell: returns "cell index". There are 2^n cells in a R^n
     point. The cell index corresponds to a binary mapping with x_n
     variables
-    @param point: array-like
-    @param reference: array-like. Reference coordinate
+    @param point: list. All coordinates in point
+    @param reference: list. All coordinates in reference
     @return int
     '''
-    if not(isinstance(point, list) or
-       isinstance(reference, list) or
-       isinstance(point, np.ndarray) or
-       isinstance(reference, np.ndarray)):
-        raise UserWarning("point: {}, type: {}, reference: {}, type: {} are\
+    if not(isinstance(point, list) or isinstance(reference, list)):
+        raise TypeError("point: {}, type: {}, reference: {}, type: {} are\
 not lists".format(point, type(point), reference, type(reference)))
 
-    n = len(reference)
     cell_string = ""
-    for dim in range(n):
+    for dim in range(len(reference)):
         if point[dim] > reference[dim]:
             cell_string += '0'
         elif point[dim] < reference[dim]:
             cell_string += '1'
         else:
-            raise UserWarning("TODO: handle equal case")
+            raise NotImplementedError("TODO: handle equal case")
     return int(cell_string, 2)
 
 
@@ -99,13 +101,15 @@ def polytope(x, ref_point):
     '''
     @brief polytope: find points in x that form smallest polytope around
     point. For x in R^n, the smallest polytope will require 2^n points.
-    N is the symbol for number of samples
+    N is the symbol for number of samples. TODO: want to phase everything
+    into either mgrid style OR (n dim, N samples) but until then they are cases
     @param x: nested list. All coordinates in n-dimensional grid
     @param ref_point: tuple. Coordinate(s) of point to find polytope around
     @returns: list of ints. Indices of polytope points in x
     '''
     x = np.array(x)
-    if mgrid_shape(x) and x.shape[0] > 1:  # Omit 1D grids because some are not ordered
+    # Omit 1D grids because some are not ordered
+    if mgrid_shape(x) and x.shape[0] > 1:
         # if mgrid shape we assume it is uniformly distributed. Then we can
         # use faster, mgrid_polytope function
         # TODO: either add uniform dist. check here or stop using mgrids
