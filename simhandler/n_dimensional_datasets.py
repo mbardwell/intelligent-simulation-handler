@@ -69,6 +69,7 @@ def flattened_mesh(x):
 # @param noise=0: numpy.random.normal
 # @returns: nested list. Same as mgrid
 def decaying_sinewave_nd(x, frequency=2, noise=0):
+    x = np.array(x)
     n = x.shape[0]
     f = np.ones(x[0].shape)
     for point, _ in np.ndenumerate(f):
@@ -79,18 +80,6 @@ def decaying_sinewave_nd(x, frequency=2, noise=0):
         elif noise < 0:
             noise = 0
     f += np.random.normal(0, noise, f.shape)
-    return f
-
-
-# @brief decaying_nd: produces n-dimensional exponentially decaying dataset
-# @param x: nested list
-# @returns: nested list. Same as mgrid
-def decaying_nd(x):
-    n = x.shape[0]
-    f = np.ones(x[0].shape)
-    for point, _ in np.ndenumerate(f):
-        for dim in range(n):
-            f[point] *= np.exp(-x[dim][point]**2)
     return f
 
 
