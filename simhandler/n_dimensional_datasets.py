@@ -5,7 +5,7 @@ Produces R^n -> R datasets for n in Z
 """
 
 import numpy as np
-from random import random
+import random
 
 
 # @brief mesh: n-dimensional mgrid
@@ -21,7 +21,7 @@ def mesh(n, start, stop, steps):
     return mgrid
 
 
-def stochastic_mesh(n, start, stop, N):
+def stochastic_mesh(n, start, stop, N, seed=None, precision=None):
     '''
     @brief mesh: sorted, random n-dimensional layout with guaranteed domain
     @param n: int. Number of dimensions
@@ -34,7 +34,17 @@ def stochastic_mesh(n, start, stop, N):
         raise ValueError("dimension passed to mesh is invalid")
     if not isinstance(N, int):
         raise ValueError("number of samples must be an integer")
-    grid = np.array([[start]+[random() for _ in range(N-2)]+[stop] for _ in range(n)])
+    if seed is not None and isinstance(seed, int):
+        random.seed(seed)
+
+    def random_vector(start, stop, N):
+        K = stop-start
+        if precision is not None:
+            return [start]+[K*round(random.random(), precision)+start for _ in range(N-2)]+[stop]
+        else:
+            return [start]+[K*random.random()+start for _ in range(N-2)]+[stop]
+
+    grid = np.array([random_vector(start, stop, N) for _ in range(n)])
     return grid
 
 
@@ -133,7 +143,7 @@ def constant_nd(x, offset):
 # @param x: nested list
 # @param scale: float. Noise amplitude
 # @returns: nested list. Same as mgrid
-def random_nd(x, scale, seed=1):
+def random_nd(x, scale, seed=None):
     n = x.shape[0]
     np.random.seed(seed)
     f = np.random.normal(0, scale, x[0].shape)
