@@ -50,9 +50,9 @@ class TestNDimensionalDatasets(unittest.TestCase):
 
 class TestExtremaDetector(unittest.TestCase):
 
-    def test_fast_polytope(self):
+    def test_mgrid_polytope(self):
         idx = (1, 3, 3)
-        testee = fast_polytope(idx, 0, 4)
+        testee = mgrid_polytope(idx, 0, 4)
         answer = [(0, 3, 3), (2, 3, 3),
                   (1, 2, 3), (1, 4, 3),
                   (1, 3, 2), (1, 3, 4)]
@@ -71,6 +71,33 @@ class TestExtremaDetector(unittest.TestCase):
         testee = len(extremum_locator(x, f, eta))
         answer = 27
         self.assertEqual(testee, answer)
+
+    def test_euclidean_distance(self):
+        point = (1, 2, 3)
+        ref = (1, 2, 3)
+        self.assertRaises(TypeError, euclidean_distance, point, ref)
+        point = [1, 2, 3]
+        ref = [2, 3, 4]
+        testee = euclidean_distance(point, ref)
+        answer = 1.7320508075688772
+        self.assertEqual(testee, answer)
+        point = [1]
+        ref = [3]
+        self.assertEqual(euclidean_distance(point, ref), 2.0)
+
+    def test_which_cell(self):
+        ref = [0, 0, 0]
+        answer = 7
+        for x in [-1, 1]:
+            for y in [-1, 1]:
+                for z in [-1, 1]:
+                    point = [x, y, z]
+                    testee = which_cell(point, ref)
+                    self.assertEqual(testee, answer)
+                    answer -= 1
+        point = (1, 2, 3)
+        ref = (1, 2, 3)
+        self.assertRaises(TypeError, which_cell, point, ref)
 
 
 if __name__ == "__main__":
