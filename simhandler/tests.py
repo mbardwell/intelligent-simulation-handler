@@ -59,7 +59,7 @@ class TestExtremaDetector(unittest.TestCase):
         for i, value in enumerate(answer):
             self.assertEqual(testee[i], value)
 
-    def test_extremum_locator(self):
+    def test_mgrid_extremum_locator(self):
         n = 3
         start = -1
         stop = 1
@@ -68,14 +68,11 @@ class TestExtremaDetector(unittest.TestCase):
         f = decaying_sinewave_nd(x)
         eta = 1e-5
 
-        testee = len(extremum_locator(x, f, eta))
+        testee = len(mgrid_extremum_locator(x, f, eta))
         answer = 27
         self.assertEqual(testee, answer)
 
     def test_euclidean_distance(self):
-        point = (1, 2, 3)
-        ref = (1, 2, 3)
-        self.assertRaises(TypeError, euclidean_distance, point, ref)
         point = [1, 2, 3]
         ref = [2, 3, 4]
         testee = euclidean_distance(point, ref)
@@ -95,9 +92,44 @@ class TestExtremaDetector(unittest.TestCase):
                     testee = which_cell(point, ref)
                     self.assertEqual(testee, answer)
                     answer -= 1
-        point = (1, 2, 3)
-        ref = (1, 2, 3)
-        self.assertRaises(TypeError, which_cell, point, ref)
+
+    def test_organize_neighbours_by_cell(self):
+        x = np.array([[0, 2, 200, 1]])
+        ref = [1.5]
+        testee = organize_neighbours_by_cell(x.T, ref)
+        answer = {0: [1, 2], 1: [0, 3]}
+        self.assertEqual(testee, answer)
+        x = np.array([[1, 2, 3, 4], [5, 6, 7, 8]])
+        ref = [2.5, 2.5]
+        testee = organize_neighbours_by_cell(x.T, ref)
+        answer = {2: [0, 1], 0: [2, 3]}
+        self.assertEqual(testee, answer)
+        x = np.array([[1, 2, 3, 4], [5, 6, 7, 8]])
+        ref = [2.5, 2.5]
+        testee = organize_neighbours_by_cell(x.T, ref, True)
+        answer = {2: [0], 0: [2]}
+        self.assertEqual(testee, answer)
+
+    def test_polytope(self):
+        x = [[0, 1, 200, 3]]
+        ref = [0.5]
+        self.assertEqual(polytope(x, ref), [0, 1])
+        x = [[0, 1, 1.1, 0.1, 2], [0, 0.1, 1.1, 1, 2]]
+        ref = [0.5, 0.5]
+        self.assertEqual(polytope(x, ref), [1, 3, 0, 2])
+        x = [[1, 1], [123, 412], [423, 1212]]
+        ref = [1, 10, 100]
+        self.assertRaises(NotImplementedError, polytope, x, ref)
+
+    def test_extremum_locator(self):
+        x = [[0, 0.5, 1, 1.5]]
+        f = decaying_sinewave_nd(x)
+        eta = 1e-5
+        self.assertEqual(extremum_locator(x, f, eta), [1, 2])
+        x = [[-1, 1, 1.1, -0.9, 0], [-1, -1.1, 1, 0.9, 0]]
+        f = decaying_sinewave_nd(x)
+        eta = 1e-5
+        self.assertEqual(extremum_locator(x, f, eta), [4])
 
 
 if __name__ == "__main__":
