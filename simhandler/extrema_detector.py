@@ -13,13 +13,11 @@ def euclidean_distance(point, reference):
     '''
     @brief euclidean_distance: distance between point and reference. Both
     point and reference can be in R^. Must be the same dimension
-    @param point: list. All coordinates in point
-    @param reference: list. All coordinates in reference
+    @param point: list-like. All coordinates in point
+    @param reference: list-like. All coordinates in reference
     @returns float
     '''
-    if not (isinstance(point, list) and isinstance(reference, list)):
-        raise TypeError("point: {}, type: {}, reference: {}, type: {} are\
-not lists".format(point, type(point), reference, type(reference)))
+
     if len(point) != len(reference):
         raise ValueError("length of point not equal to reference")
 
@@ -34,13 +32,10 @@ def which_cell(point, reference):
     @brief which_cell: returns "cell index". There are 2^n cells in a R^n
     point. The cell index corresponds to a binary mapping with x_n
     variables
-    @param point: list. All coordinates in point
-    @param reference: list. All coordinates in reference
+    @param point: list-like. All coordinates in point
+    @param reference: list-like. All coordinates in reference
     @return int
     '''
-    if not(isinstance(point, list) or isinstance(reference, list)):
-        raise TypeError("point: {}, type: {}, reference: {}, type: {} are\
-not lists".format(point, type(point), reference, type(reference)))
 
     cell_string = ""
     for dim in range(len(reference)):
@@ -72,10 +67,12 @@ def mgrid_shape(x):
 
 def mgrid_polytope(point, min_value, max_value):
     '''
-    @brief fast_polytope: returns points that form smallest polytope
+    @brief fast_polytope: find coordinates of that form smallest polytope
     around point. Assumes grid x is uniformly distributed mgrid.
-    @param index: int. Index of point to be enclosed
-    @returns: list of ints. Indices of polytope points in x
+    @param point: point to find polytope around
+    @param min_value: min value of coordinates
+    @param max_value: max value of coordinates
+    @returns: list of ints. Indices of polytope coordinates in x
     '''
     points = []
     for idx in range(len(point)):
@@ -90,54 +87,113 @@ def mgrid_polytope(point, min_value, max_value):
     return points
 
 
-def init_cells(n):
-    cells = {}
-    for cell in range(2**n):
-        cells[cell] = None
-    return cells
-
-
-def polytope(x, ref_point):
+def mgrid_extremum_locator(x, f, eta):
     '''
-    @brief polytope: find points in x that form smallest polytope around
-    point. For x in R^n, the smallest polytope will require 2^n points.
-    N is the symbol for number of samples. TODO: want to phase everything
-    into either mgrid style OR (n dim, N samples) but until then they are cases
-    @param x: nested list. All coordinates in n-dimensional grid
-    @param ref_point: tuple. Coordinate(s) of point to find polytope around
-    @returns: list of ints. Indices of polytope points in x
+    @brief mgrid_extremum_locator: finds extremum in a dataset based on \
+    formula in https://web.njit.edu/~ansari/papers/04neurocomputing.pdf
+    @param x: nested list. Shape (# dim, # samples) or mgrid-like
+    @param f: nested list. Shape (# dim, # samples) or mgrid-like
+    @param eta: float. A qualifier for what is considered an extremum.
+    The smaller, the more likely an extremum will qualify
+    @returns: list of tuples
     '''
-    x = np.array(x)
-    # Omit 1D grids because some are not ordered
-    if mgrid_shape(x) and x.shape[0] > 1:
-        # if mgrid shape we assume it is uniformly distributed. Then we can
-        # use faster, mgrid_polytope function
-        # TODO: either add uniform dist. check here or stop using mgrids
-        samples_per_dimension = len(x[0])
-        return mgrid_polytope(ref_point, 0, samples_per_dimension-1)
+    if not mgrid_shape(x):
+        raise UserWarning("Input is not mgrid shape")
 
-    for dim in range(len(x)-1):
-        if len(x[dim]) != len(x[dim+1]):
-            raise UserWarning("Each dimension must have same length")
+    valid_points = []
+    no_points_in_polytope = 2*x.shape[0]
+    samples_per_dimension = f.shape[0]
+    for idx, val in np.ndenumerate(f):
+        neighbours = mgrid_polytope(idx, 0, samples_per_dimension-1)
+        if len(neighbours) == no_points_in_polytope:
+            f_points = [f[points] for points in neighbours]
+            if val < min(f_points)-eta or val > max(f_points)+eta:
+                    valid_points.append(idx)
+    return valid_points
 
-    N = x.shape[1]
-    distances = [euclidean_distance(x.T[i], x.T[ref_point]) for i in range(N)]
-    sorted_eucl_distance_indices = np.argsort(distances)[1:]  # remove point
 
-    cells = init_cells(x.shape[0])
+def organize_neighbours_by_cell(x, reference, one_per_cell=False):
+    '''
+    @brief TODO
+    @param x: list. Shape (N sample, n dim). Function faster if sorted
+    @param reference: list. Shape (n dim)
+    @param early_stop=False: bool. If True, assumes x is sorted by distance
+    and stop when all of the cells have a value
+    @return dict with keys [0, 2^len(x)]
+    '''
 
+    if isinstance(x, list):
+        x = np.array(x)
+    if x.shape[1] != len(reference):
+        raise ValueError("n dim in x: {} not the same as in reference: {}".
+                         format(x.shape[1], len(reference)))
+
+    neighbours_by_cell = {}
     count = 0
-    for polytope_point in sorted_eucl_distance_indices:
-        cell = which_cell(x.T[polytope_point], x.T[ref_point])
-        if cells[cell] is None:
-            cells[cell] = polytope_point
-            count += 1
-        if count == range(2**x.shape[0]):
+    for idx, neighbour in enumerate(x):
+
+        cell = which_cell(neighbour, reference)
+        if cell in neighbours_by_cell:
+            if not one_per_cell:
+                neighbours_by_cell[cell].append(idx)
+        else:
+            neighbours_by_cell[cell] = [idx]
+        count += 1
+        if one_per_cell and count == 2**len(x):
             break
 
-    polytope_points = []
-    [polytope_points.append(cells[key]) for key in cells if cells[key] is not None]
-    return polytope_points
+    return neighbours_by_cell
+
+
+def polytope(x, reference):
+    '''
+    @brief polytope: find n+1 points in (x in R^n) that form smallest \
+    polytope around reference. N is the symbol for number of samples. \
+    TODO: want to phase everything into mgrid style OR (n dim, N samples) \
+    but until then they are handled as separate cases
+    @param x: nested list or np.ndarray. Potential polytope points in shape (n, N)
+    @param reference: list. Point you want polytope around. Shape (n)
+    @returns: list of ints. Indices of polytope points in x
+    '''
+
+    try:
+        dummy = x[0][0]
+    except IndexError:
+        raise UserWarning("x is not a nested list")
+
+    if isinstance(x, list):
+        x = np.array(x)
+
+    if not (isinstance(x, np.ndarray) and
+            isinstance(reference, list) or isinstance(reference, np.ndarray)):
+        raise TypeError("x: {}, type: {}, reference: {}, type: {} are not \
+proper types".format(x, type(x), reference, type(reference)))
+
+    n = len(x)
+    if n > 1:
+        for dim in range(n-1):
+            if len(x[dim]) != len(x[dim+1]):
+                raise UserWarning("Each dimension must have same length")
+    N = len(x[0])
+
+    x_T = x.T
+    idx_distances = []
+    for i in range(N):
+        idx_distances.append(euclidean_distance(x_T[i], reference))
+    idx_sorted_by_distance = np.argsort(idx_distances)
+
+    idx_neighbours_by_cell = organize_neighbours_by_cell(
+        [x.T[idx] for idx in idx_sorted_by_distance], reference, True)
+    neighbours = []
+    for cell in idx_neighbours_by_cell:
+        try:
+            idx_sorted_neighbour = idx_neighbours_by_cell[cell][0]  # only 1 element
+            neighbours.append(idx_sorted_by_distance[idx_sorted_neighbour])
+        except Exception as e:
+            print("TODO exception: ", e)
+            # "Polytopes only have one neighbour per cell"
+
+    return neighbours
 
 
 def extremum_locator(x, f, eta):
@@ -150,13 +206,23 @@ def extremum_locator(x, f, eta):
     The smaller, the more likely an extremum will qualify
     @returns: list of tuples
     '''
-    valid_points = []
-    no_points_in_polytope = 2*x.shape[0]
-    samples_per_dimension = f.shape[0]
-    for idx, val in np.ndenumerate(f):
-        neighbours = polytope(x, idx)
-        if len(neighbours) == no_points_in_polytope:
-            f_points = [f[points] for points in neighbours]
-            if val < min(f_points)-eta or val > max(f_points)+eta:
-                    valid_points.append(idx)
-    return valid_points
+    if isinstance(x, list):
+        x = np.array(x)
+        n = x.shape[0]
+
+    idx_extrema = []
+    samples_per_dimension = len(f)
+    x_T = x.T
+    for ref, val in enumerate(f):
+        if ref < len(f):
+            x_without_ref = np.delete(x_T, ref, 0).T
+            idx_neighbours = polytope(x_without_ref, x_T[ref])
+            for idx, value in enumerate(idx_neighbours):
+                if value >= ref:
+                    idx_neighbours[idx] = value + 1
+        if len(idx_neighbours) == 2**x.shape[0]:
+            f_neighbours = [f[idx] for idx in idx_neighbours]
+            if val < min(f_neighbours)-eta or val > max(f_neighbours)+eta:
+                    idx_extrema.append(ref)
+
+    return idx_extrema
