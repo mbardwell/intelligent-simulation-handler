@@ -115,19 +115,5 @@ dmypy.json
 .pyre/
 
 # Custom Blacklist
-simhandler/data/print/
-simhandler/data/*.*
-simhandler/data/function_mappings/*
-simhandler/data/loadgen_profiles/*
-simhandler/data/network_configurations/*
-simhandler/test/thesis_tests/
-
-# Custom Whitelist
-!simhandler/data/__init__.py
-!simhandler/data/function_mappings/__init__.py
-!simhandler/data/loadgen_profiles/__init__.py
-!simhandler/data/loadgen_profiles/example*.zp
-!simhandler/data/network_configurations/__init__.py
-!simhandler/data/network_configurations/3node.json
-.vscode/settings.json
-simhandler.code-workspace
+.vscode/*
+*.code-workspace
