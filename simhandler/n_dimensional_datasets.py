@@ -8,13 +8,24 @@ import numpy as np
 import random
 
 
-# @brief mesh: n-dimensional mgrid
-# @param n: int
-# @param start: float
-# @param stop: float
-# @param steps: float
-# @returns: nested list
-def mesh(n, start, stop, steps):
+def uniform_mesh(n, start, stop, steps):
+    '''
+    Mgrid style n-dimensional mesh
+
+    Parameters
+    ----------
+    n: int
+
+    start: number-like
+
+    stop: number-like
+
+    steps: number-like
+
+    Returns
+    -------
+    Nested list
+    '''
     if n < 1 or not isinstance(n, int):
         raise ValueError("dimension passed to mesh is invalid")
     mgrid = np.mgrid[tuple(slice(start, stop+steps, steps) for _ in range(n))]

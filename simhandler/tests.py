@@ -18,9 +18,9 @@ class TestNDimensionalDatasets(unittest.TestCase):
         stop = 1
         steps = 0.25
         for n in range(1, no_dimensions_to_test):
-            self.assertEqual(len(mesh(n, start, stop, steps).shape), n+1)
+            self.assertEqual(len(uniform_mesh(n, start, stop, steps).shape), n+1)
 
-        testee = mesh(1, start, stop, steps)
+        testee = uniform_mesh(1, start, stop, steps)
         answer = [[0, 0.25, 0.5, 0.75, 1]]
         for idx, value in np.ndenumerate(answer):
             self.assertEqual(testee[idx], value)
@@ -31,7 +31,7 @@ class TestNDimensionalDatasets(unittest.TestCase):
         stop = 1
         steps = 0.25
         n = 2
-        x = mesh(n, start, stop, steps)
+        x = uniform_mesh(n, start, stop, steps)
         testee = decaying_sinewave_nd(x)
         answer = [[1.00000000e+00,  5.75224600e-17, -7.78800783e-01,
                   -1.04667407e-16,  3.67879441e-01],
@@ -64,7 +64,7 @@ class TestExtremaDetector(unittest.TestCase):
         start = -1
         stop = 1
         steps = 0.1
-        x = mesh(n, start, stop, steps)
+        x = uniform_mesh(n, start, stop, steps)
         f = decaying_sinewave_nd(x)
         eta = 1e-5
 
