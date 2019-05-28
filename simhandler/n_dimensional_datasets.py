@@ -128,14 +128,48 @@ def constant_nd(x, offset):
     return f
 
 
-# @brief random_nd: produces n-dimensional random valued dataset
-# @param x: nested list
-# @param scale: float. Noise amplitude
-# @returns: nested list. Same as mgrid
 def random_nd(x, scale, seed=None):
+    '''
+    Produces n-dimensional random valued dataset
+
+    Parameters
+    ----------
+    x: nested list
+    bias: float
+        Noise amplitude
+
+    Returns
+    -------
+    np.ndarray
+    '''
     n = x.shape[0]
     np.random.seed(seed)
     f = np.random.normal(0, scale, x[0].shape)
+    return f
+
+
+def sloped_nd(x, bias):
+    '''
+    Produces n-dimensional sloped dataset
+
+    Parameters
+    ----------
+    x: list-like
+    bias: float/int
+
+    Returns
+    -------
+    np.ndarray
+    '''
+
+    if not isinstance(x, np.ndarray):
+        x = np.array(x)
+    dim = x.shape[0]
+    f = np.zeros(x[0].shape)
+    for i in range(len(f)):
+        for j in range(dim):
+            f[i] += x[j][i]
+        f[i] += bias
     return f
 
 
