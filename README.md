@@ -1,4 +1,4 @@
-![badge pypi](https://img.shields.io/pypi/v/simhandler.svg) ![badge license](https://img.shields.io/pypi/l/simhandler.svg)
+![badge ci](https://travis-ci.org/mbardwell/intelligent-simulation-handler.svg?branch=feature/universal_regression) ![badge pypi](https://img.shields.io/pypi/v/simhandler.svg) ![badge license](https://img.shields.io/pypi/l/simhandler.svg)
 
 # intelligent-simulation-handler
 
