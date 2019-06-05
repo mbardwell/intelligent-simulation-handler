@@ -38,13 +38,13 @@ def stochastic_mesh(n, start, stop, N, seed=None, precision=None):
     @param n: int. Number of dimensions
     @param start: float
     @param stop: float
-    @param N: int. Number samples
-    @returns: nested list
+    @param N: int. Number of samples
+    @returns: nested list. Always includes stop & start
     '''
     if n < 1 or not isinstance(n, int):
         raise ValueError("dimension passed to mesh is invalid")
-    if not isinstance(N, int):
-        raise ValueError("number of samples must be an integer")
+    if not (isinstance(N, int) or N > 0):
+        raise ValueError("number of samples must be an integer and >0")
     if seed is not None and isinstance(seed, int):
         random.seed(seed)
 
