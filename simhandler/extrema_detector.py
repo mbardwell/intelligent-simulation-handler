@@ -87,14 +87,14 @@ def mgrid_polytope(point, min_value, max_value):
     return points
 
 
-def mgrid_extremum_locator(x, f, eta):
+def mgrid_extrema_locator(x, f, eta):
     '''
-    @brief mgrid_extremum_locator: finds extremum in a dataset based on \
+    @brief mgrid_extrema_locator: finds extrema in a dataset based on \
     formula in https://web.njit.edu/~ansari/papers/04neurocomputing.pdf
     @param x: nested list. Shape (# dim, # samples) or mgrid-like
     @param f: nested list. Shape (# dim, # samples) or mgrid-like
-    @param eta: float. A qualifier for what is considered an extremum.
-    The smaller, the more likely an extremum will qualify
+    @param eta: float. A qualifier for what is considered an extrema.
+    The smaller, the more likely an extrema will qualify
     @returns: list of tuples
     '''
     if not mgrid_shape(x):
@@ -196,14 +196,14 @@ proper types".format(x, type(x), reference, type(reference)))
     return neighbours
 
 
-def extremum_locator(x, f, eta):
+def extrema_locator(x, f, eta):
     '''
-    @brief extremum_locator: finds extremum in a dataset based on formula in
+    @brief extrema_locator: finds extrema in a dataset based on formula in
     https://web.njit.edu/~ansari/papers/04neurocomputing.pdf
     @param x: nested list. Shape (# dim, # samples) or mgrid-like
     @param f: nested list. Shape (# dim, # samples) or mgrid-like
-    @param eta: float. A qualifier for what is considered an extremum.
-    The smaller, the more likely an extremum will qualify
+    @param eta: float. A qualifier for what is considered an extrema.
+    The smaller, the more likely an extrema will qualify
     @returns: list of tuples
     '''
     if isinstance(x, list):

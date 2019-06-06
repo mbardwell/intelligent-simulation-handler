@@ -59,7 +59,7 @@ class TestExtremaDetector(unittest.TestCase):
         for i, value in enumerate(answer):
             self.assertEqual(testee[i], value)
 
-    def test_mgrid_extremum_locator(self):
+    def test_mgrid_extrema_locator(self):
         n = 3
         start = -1
         stop = 1
@@ -68,7 +68,7 @@ class TestExtremaDetector(unittest.TestCase):
         f = decaying_sinewave_nd(x)
         eta = 1e-5
 
-        testee = len(mgrid_extremum_locator(x, f, eta))
+        testee = len(mgrid_extrema_locator(x, f, eta))
         answer = 27
         self.assertEqual(testee, answer)
 
@@ -121,15 +121,15 @@ class TestExtremaDetector(unittest.TestCase):
         ref = [1, 10, 100]
         self.assertRaises(NotImplementedError, polytope, x, ref)
 
-    def test_extremum_locator(self):
+    def test_extrema_locator(self):
         x = [[0, 0.5, 1, 1.5]]
         f = decaying_sinewave_nd(x)
         eta = 1e-5
-        self.assertEqual(extremum_locator(x, f, eta), [1, 2])
+        self.assertEqual(extrema_locator(x, f, eta), [1, 2])
         x = [[-1, 1, 1.1, -0.9, 0], [-1, -1.1, 1, 0.9, 0]]
         f = decaying_sinewave_nd(x)
         eta = 1e-5
-        self.assertEqual(extremum_locator(x, f, eta), [4])
+        self.assertEqual(extrema_locator(x, f, eta), [4])
 
 
 if __name__ == "__main__":
